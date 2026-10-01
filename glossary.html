@@ -1,0 +1,201 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Dental Terminology Glossary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Noto+Sans:wght@400;600;700&family=Noto+Sans+Arabic:wght@400;600;700&display=swap">
+<style>
+/* Layout: slide-style header, colour key, a term list (word · parts · meaning), then the word-parts board in four coloured columns. */
+:root{
+  --bg:#FFFFFF; --soft:#EFF5FD; --line:#D6E2F2; --ink:#13213F; --muted:#5A6784;
+  --navy:#123E8C; --red:#C8262E; --stroke:#1A1E2B;
+  --pre:#F5CD5E; --root:#85C4FF; --cv:#23B39A; --suf:#EB6464; --chip-ink:#13213F;
+  --t-pre:#B98900; --t-root:#2F7FD0; --t-cv:#12917A; --t-suf:#D23F3F;
+  --f-display:"Baloo 2","Arial Rounded MT Bold",system-ui,sans-serif;
+  --f-body:"Noto Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-ar:"Noto Sans Arabic","Segoe UI",Tahoma,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1526; --soft:#17223D; --line:#2A3858; --ink:#E8EDF8; --muted:#9BA7C3; --navy:#94BAFF; --red:#FF7C82; --stroke:#0A0E19;
+  --t-pre:#F5CD5E; --t-root:#85C4FF; --t-cv:#4FD6BA; --t-suf:#FF8A8A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1526; --soft:#17223D; --line:#2A3858; --ink:#E8EDF8; --muted:#9BA7C3; --navy:#94BAFF; --red:#FF7C82; --stroke:#0A0E19;
+  --t-pre:#F5CD5E; --t-root:#85C4FF; --t-cv:#4FD6BA; --t-suf:#FF8A8A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;padding:0 16px 48px;margin:0}
+.ar{font-family:var(--f-ar);direction:rtl}
+.wrap{max-width:1040px;margin:0 auto}
+header.top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;padding-block:22px 12px;border-bottom:2px solid var(--root)}
+header.top b{color:var(--navy);font-size:20px}
+header.top span{color:var(--navy);font-size:20px;font-weight:700}
+.hero{padding-block:28px 8px;display:grid;gap:6px}
+.hero h1{margin:0;font-family:var(--f-display);font-weight:800;font-size:clamp(40px,7vw,68px);line-height:1.05}
+.hero .sub{display:flex;justify-content:space-between;gap:8px 20px;flex-wrap:wrap;color:var(--red);font-weight:700;font-size:20px}
+.hero p{margin:4px 0 0;color:var(--muted);max-width:68ch}
+
+.w{font-family:var(--f-display);font-weight:800;-webkit-text-stroke:4px var(--stroke);paint-order:stroke fill}
+.w.pre{color:var(--pre)} .w.root{color:var(--root)} .w.cv{color:var(--cv)} .w.suf{color:var(--suf)}
+.c-pre{color:var(--t-pre)} .c-root{color:var(--t-root)} .c-cv{color:var(--t-cv)} .c-suf{color:var(--t-suf)}
+
+.key{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-block:22px}
+@media (max-width:640px){.key{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.key div{border-radius:14px;padding:12px 14px;display:grid;gap:2px;color:var(--chip-ink);border:2px solid rgba(0,0,0,.12)}
+.key b{font-size:17px} .key span{font-family:var(--f-ar);font-size:15px;font-weight:600}
+.k-pre{background:var(--pre)} .k-root{background:var(--root)} .k-cv{background:var(--cv);color:#fff!important} .k-suf{background:var(--suf);color:#fff!important}
+
+h2{font-size:clamp(24px,3.4vw,30px);color:var(--red);margin:36px 0 4px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+h2 .ar{font-size:.85em}
+.lead{color:var(--muted);margin:0 0 16px}
+
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.tools input{flex:1;min-width:200px;font:inherit;padding:10px 14px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink)}
+.tools input:focus{outline:none;border-color:var(--navy)}
+.pill{font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:999px;border:2px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.pill[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:var(--bg)}
+.pill:focus-visible,.tools input:focus-visible{outline:3px solid var(--navy);outline-offset:2px}
+
+.terms{display:grid;gap:10px}
+.term{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1.35fr);gap:10px 22px;align-items:center;background:var(--soft);border:1px solid var(--line);border-radius:16px;padding:14px 18px}
+@media (max-width:760px){.term{grid-template-columns:1fr}}
+.term .word{font-size:clamp(28px,3.6vw,36px);line-height:1.15;overflow-wrap:anywhere;min-width:0}
+.parts{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.chip{font-family:var(--f-display);font-weight:700;font-size:18px;line-height:1;padding:7px 10px 5px;border-radius:9px;color:var(--chip-ink);border:1.5px solid rgba(0,0,0,.15)}
+.chip.pre{background:var(--pre)} .chip.root{background:var(--root)} .chip.cv{background:var(--cv);color:#fff} .chip.suf{background:var(--suf);color:#fff}
+.pat{font-size:13px;color:var(--muted);margin-top:6px;width:100%}
+.mean{display:grid;gap:2px;min-width:0}
+.mean .en{font-weight:600}
+.mean .ar{font-size:17px}
+.where{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--navy);margin-top:4px}
+.empty{color:var(--muted);padding:20px;text-align:center;border:2px dashed var(--line);border-radius:16px}
+
+.board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:start}
+@media (max-width:900px){.board{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.board{grid-template-columns:1fr}}
+.col{background:var(--soft);border:1px solid var(--line);border-radius:18px;padding:12px;display:grid;gap:10px;min-width:0}
+.col-h{border-radius:12px;padding:10px;text-align:center;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--chip-ink);display:grid}
+.col-h small{font-family:var(--f-ar);letter-spacing:0;text-transform:none;font-size:14px}
+.col.pre .col-h{background:var(--pre)} .col.root .col-h{background:var(--root)} .col.cv .col-h{background:var(--cv);color:#fff} .col.suf .col-h{background:var(--suf);color:#fff}
+.part{display:grid;gap:1px;padding:8px 6px;border-bottom:1px solid var(--line)}
+.part:last-child{border-bottom:none}
+.part .w{font-size:26px;line-height:1.2}
+.part .m{display:flex;justify-content:space-between;gap:4px 10px;flex-wrap:wrap;font-weight:600;font-size:15px}
+.part .m .ar{font-weight:600}
+.part .in{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.part .cf{font-size:13px;color:var(--muted)}
+.rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+@media (max-width:640px){.rules{grid-template-columns:1fr}}
+.rules div{background:#FFF6D8;border:1px solid #F1D98A;border-radius:14px;padding:12px 16px;display:grid;gap:2px;color:#13213F}
+.rules .ar{color:#3A4560}
+footer{margin-top:36px;padding-top:14px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+footer b{color:var(--navy);letter-spacing:.1em;font-size:12px}
+</style>
+
+<div class="wrap">
+  <header class="top"><b>Dental Medical Terminology</b><span class="ar">مصطلحات طب الأسنان الطبية</span></header>
+
+  <section class="hero">
+    <h1><span class="w pre">Glos</span><span class="w root">sa</span><span class="w suf">ry</span></h1>
+    <div class="sub"><span>Lectures 1, 2 &amp; 3 · every term and word part</span><span class="ar">كل المصطلحات وأجزاء الكلمات</span></div>
+    <p>28 dental terms built from 33 word parts. Each colour shows the job a part does in the word.</p>
+  </section>
+
+  <div class="key" aria-label="Colour key">
+    <div class="k-pre"><b>Prefix</b><span>سوابق الكلمة</span></div>
+    <div class="k-root"><b>Root</b><span>جذر الكلمة</span></div>
+    <div class="k-cv"><b>Combining vowel</b><span>حرف ربط</span></div>
+    <div class="k-suf"><b>Suffix</b><span>لواحق الكلمة</span></div>
+  </div>
+
+  <h2><span>All terms</span><span class="ar">كل المصطلحات</span></h2>
+  <p class="lead">Sorted A to Z. The tag under each meaning shows where students met the term.</p>
+  <div class="tools">
+    <label for="q" class="visually-hidden" style="position:absolute;left:-9999px">Search terms</label>
+    <input id="q" type="search" placeholder="Search a term, part or meaning…" autocomplete="off">
+    <button class="pill" data-f="all" aria-pressed="true">All</button>
+    <button class="pill" data-f="L1">Lecture 1</button>
+    <button class="pill" data-f="L2">Lecture 2</button>
+    <button class="pill" data-f="L3">Lecture 3</button>
+    <button class="pill" data-f="G1">Lecture 1 game</button>
+    <button class="pill" data-f="G3">Lecture 3 game</button>
+  </div>
+  <div class="terms" id="terms"></div>
+
+  <h2><span>Word parts</span><span class="ar">أجزاء الكلمات</span></h2>
+  <p class="lead">Each part with its meaning and the terms it builds.</p>
+  <div class="board" id="board"></div>
+
+  <div class="rules">
+    <div><b>Root + combining vowel = combining form</b><span class="ar">جذر + حرف ربط = صيغة مركبة</span><span>odont + o = odont/o. The slash is only for learning, never written in the real term.</span></div>
+    <div><b>Do not add "o" everywhere</b><span class="ar">لا نضيف حرف الربط تلقائياً بعد كل جذر</span><span>gingiv + itis = gingivitis, but odont + o + logy = odontology.</span></div>
+  </div>
+
+  <footer><b>BUILD → CONNECT → UNDERSTAND</b><span class="ar">ابنِ ← اربط ← افهم</span></footer>
+</div>
+
+<script>
+const T=[
+ ['endodontic',[['endo','pre'],['dont','root'],['ic','suf']],'Pertaining to inside the tooth','متعلّق بداخل السن',['G1'],[['endo','pre'],['odont','root'],['ic','suf']]],
+ ['gingival',[['gingiv','root'],['al','suf']],'Pertaining to the gingiva','متعلّق باللثة',['L2']],
+ ['gingivectomy',[['gingiv','root'],['ectomy','suf']],'Surgical removal of gingiva','استئصال جراحي للثة',['G1','L3']],
+ ['gingivitis',[['gingiv','root'],['itis','suf']],'Inflammation of the gingiva','التهاب اللثة',['L1','L2']],
+ ['odontalgia',[['odont','root'],['algia','suf']],'Tooth pain','ألم السن',['G1']],
+ ['odontogenic',[['odont','root'],['o','cv'],['genic','suf']],'Originating in a tooth or tooth-forming tissues','ناشئ من السنّ أو من الأنسجة المكوِّنة للأسنان',['L1','L2']],
+ ['odontology',[['odont','root'],['o','cv'],['logy','suf']],'Study of teeth','علم الأسنان',['L1','L2']],
+ ['osteology',[['oste','root'],['o','cv'],['logy','suf']],'Study of bone','علم العظام',['G1']],
+ ['osteomyelitis',[['oste','root'],['o','cv'],['myel','root'],['itis','suf']],'Inflammation of bone and bone marrow','التهاب العظم ونخاع العظم',['L1','L2','L3']],
+ ['pericoronal',[['peri','pre'],['coron','root'],['al','suf']],'Pertaining to the area around the crown of a tooth','متعلّق بالمنطقة المحيطة بتاج السن',['L1','L2']],
+ ['pericoronitis',[['peri','pre'],['coron','root'],['itis','suf']],'Inflammation around the crown of a partially erupted tooth','التهاب حول تاج سنّ بازغ جزئياً',['L1','L2','L3']],
+ ['periodontitis',[['peri','pre'],['odont','root'],['itis','suf']],'Inflammation of the tissues supporting the teeth','التهاب الأنسجة الداعمة للأسنان',['L1','L2','L3']],
+ ['periosteal',[['peri','pre'],['oste','root'],['al','suf']],'Pertaining to the area around the bone','متعلّق بما حول العظم',['G1']],
+ ['polyodontia',[['poly','pre'],['odont','root'],['ia','suf']],'Many teeth (more teeth than normal)','تعدّد الأسنان',['L2']],
+ ['pulpitis',[['pulp','root'],['itis','suf']],'Inflammation of the dental pulp','التهاب لبّ السن',['L2']],
+ ['subgingival',[['sub','pre'],['gingiv','root'],['al','suf']],'Located below the gingiva','موجود تحت اللثة',['L1','L2']],
+ ['supragingival',[['supra','pre'],['gingiv','root'],['al','suf']],'Located above the gingiva','موجود فوق اللثة',['L2']],
+ ['temporomandibular',[['tempor','root'],['o','cv'],['mandibul','root'],['ar','suf']],'Pertaining to the temporal bone and the mandible','متعلّق بالعظم الصدغي والفك السفلي',['L1','L2']],
+ ['alveoloplasty',[['alveol','root'],['o','cv'],['plasty','suf']],'Surgical reshaping of the alveolar area','إعادة التشكيل الجراحي لمنطقة العظم السنخي',['L3']],
+ ['apicoectomy',[['apic','root'],['o','cv'],['ectomy','suf']],'Surgical removal of the apical portion of a tooth root','استئصال قمة جذر السن',['L3']],
+ ['cheilitis',[['cheil','root'],['itis','suf']],'Inflammation of the lip','التهاب الشفة',['L3']],
+ ['cheiloplasty',[['cheil','root'],['o','cv'],['plasty','suf']],'Surgical repair / reshaping of the lip','ترميم / إعادة تشكيل الشفة جراحياً',['G3']],
+ ['hypodontia',[['hypo','pre'],['dont','root'],['ia','suf']],'Condition involving reduced tooth number','حالة تتميز بنقص عدد الأسنان',['L3'],[['hypo','pre'],['odont','root'],['ia','suf']]],
+ ['microdontia',[['micro','pre'],['dont','root'],['ia','suf']],'Condition involving abnormally small teeth','حالة تتميز بصغر حجم الأسنان بشكل غير طبيعي',['L3'],[['micro','pre'],['odont','root'],['ia','suf']]],
+ ['pulpectomy',[['pulp','root'],['ectomy','suf']],'Surgical removal of the dental pulp','استئصال لبّ السن',['G3']],
+ ['pulpotomy',[['pulp','root'],['o','cv'],['tomy','suf']],'Incision into the dental pulp','شق / فتح لبّ السن',['L3']],
+ ['sialadenitis',[['sial','root'],['aden','root'],['itis','suf']],'Inflammation of a salivary gland','التهاب الغدة اللعابية',['L3']],
+ ['stomatitis',[['stomat','root'],['itis','suf']],'Inflammation of the mouth / oral mucosa','التهاب الفم',['L3']],
+];
+T.sort((a,b)=>a[0].localeCompare(b[0]));
+const PARTS={
+ pre:[['sub-','Below, under','تحت','subgingival'],['supra-','Above','فوق','supragingival'],['peri-','Around','حول','pericoronitis, pericoronal, periodontitis, periosteal'],['poly-','Many','متعدّد','polyodontia'],['endo-','Inside','داخل','endodontic'],['micro-','Small','صغير','microdontia'],['hypo-','Deficient, below normal','نقص / أقل من الطبيعي','hypodontia']],
+ root:[['gingiv','Gingiva','اللثة','gingivitis, gingival, subgingival, supragingival, gingivectomy','gingiv/o'],['odont','Tooth','سن','odontology, odontogenic, odontalgia, periodontitis, polyodontia, endodontic, microdontia, hypodontia','odont/o'],['oste','Bone','عظم','osteology, osteomyelitis, periosteal','oste/o'],['coron','Crown of the tooth','تاج السن','pericoronitis, pericoronal'],['pulp','Dental pulp','لبّ السن','pulpitis, pulpotomy, pulpectomy'],['myel','Bone marrow','نخاع العظم','osteomyelitis'],['tempor','Temporal region','المنطقة الصدغية','temporomandibular'],['mandibul','Mandible (lower jaw)','الفك السفلي','temporomandibular'],['apic','Apex (tip of the root)','قمة الجذر','apicoectomy','apic/o'],['alveol','Alveolus (tooth socket)','السنخ / حُفرة السن','alveoloplasty','alveol/o'],['cheil','Lip','الشفة','cheilitis, cheiloplasty','cheil/o'],['stomat','Mouth','الفم','stomatitis'],['sial','Saliva, salivary','اللعاب','sialadenitis','sial/o'],['aden','Gland','غدة','sialadenitis']],
+ cv:[['o','No meaning of its own. Links parts and eases pronunciation.','حرف ربط، لا يحمل معنى طبياً بمفرده','odontology, odontogenic, osteology, osteomyelitis, temporomandibular, apicoectomy, alveoloplasty, pulpotomy, cheiloplasty']],
+ suf:[['-itis','Inflammation','التهاب','gingivitis, pericoronitis, periodontitis, pulpitis, osteomyelitis, cheilitis, stomatitis, sialadenitis'],['-al','Pertaining to','متعلّق بـ','gingival, subgingival, supragingival, pericoronal, periosteal'],['-ar','Pertaining to','متعلّق بـ','temporomandibular'],['-ic','Pertaining to','متعلّق بـ','endodontic'],['-logy','Study of','علم','odontology, osteology'],['-genic','Originating in, produced by','ناشئ من','odontogenic'],['-algia','Pain','ألم','odontalgia'],['-ectomy','Surgical removal','استئصال جراحي','gingivectomy, apicoectomy, pulpectomy'],['-tomy','Incision, cutting into','شق / فتح','pulpotomy'],['-plasty','Surgical repair, reshaping','ترميم / إعادة تشكيل','alveoloplasty, cheiloplasty'],['-ia','Condition','حالة','polyodontia, microdontia, hypodontia']],
+};
+const KIND={pre:['Prefix','سوابق الكلمة'],root:['Root','جذر الكلمة'],cv:['Combining vowel','حرف ربط'],suf:['Suffix','لواحق الكلمة']};
+const PAT={pre:'Prefix',root:'Root',cv:'CV',suf:'Suffix'};
+const WHERE={L1:'Lecture 1',L2:'Lecture 2',L3:'Lecture 3',G1:'Lecture 1 game',G3:'Lecture 3 game'};
+const chipTxt=(t,k)=>k==='pre'?t+'-':k==='suf'?'-'+t:t;
+
+let filt='all';
+function renderTerms(){
+  const q=document.getElementById('q').value.trim().toLowerCase();
+  const list=T.filter(([w,p,en,ar,wh,ch])=>(filt==='all'||wh.includes(filt))&&(!q||w.includes(q)||en.toLowerCase().includes(q)||ar.includes(q)||(ch||p).some(([t])=>t.includes(q))));
+  const box=document.getElementById('terms');
+  box.innerHTML=list.length?list.map(([w,p,en,ar,wh,ch])=>`<article class="term">
+    <div class="word">${p.map(([t,k])=>`<span class="w ${k}">${t}</span>`).join('')}</div>
+    <div><div class="parts">${(ch||p).map(([t,k])=>`<span class="chip ${k}">${chipTxt(t,k)}</span>`).join('')}</div>
+      <div class="pat">${(ch||p).map(([,k])=>PAT[k]).join(' + ')}</div></div>
+    <div class="mean"><span class="en">${en}</span><span class="ar">${ar}</span><span class="where">${wh.map(x=>WHERE[x]).join(' · ')}</span></div>
+  </article>`).join(''):`<div class="empty">No term matches "${q.replace(/</g,'&lt;')}".</div>`;
+}
+function renderBoard(){
+  document.getElementById('board').innerHTML=['pre','root','cv','suf'].map(k=>`<section class="col ${k}">
+    <div class="col-h">${KIND[k][0]}<small>${KIND[k][1]}</small></div>
+    ${PARTS[k].map(([t,en,ar,inn,cf])=>`<div class="part"><span class="w ${k}">${t}</span>${cf?`<span class="cf">combining form: ${cf}</span>`:''}
+      <div class="m"><span>${en}</span><span class="ar">${ar}</span></div><span class="in">${inn}</span></div>`).join('')}
+  </section>`).join('');
+}
+document.getElementById('q').addEventListener('input',renderTerms);
+document.querySelectorAll('.pill').forEach(b=>b.onclick=()=>{filt=b.dataset.f;document.querySelectorAll('.pill').forEach(x=>x.setAttribute('aria-pressed',x===b));renderTerms()});
+renderTerms();renderBoard();
+</script>
+
+</body></html>
