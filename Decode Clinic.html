@@ -1,0 +1,723 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Decode Clinic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Noto+Sans:wght@400;600;700&family=Noto+Sans+Arabic:wght@400;600;700&display=swap">
+<style>
+/* Layout: a clinic day. Waiting-room strip on top, then the patient (left) and their chart with the decoding machine (right). */
+:root{
+  --bg:#EEF4FB; --surface:#FFFFFF; --soft:#E8F0FB; --line:#D3DFEF; --ink:#13213F; --muted:#5A6784;
+  --navy:#123E8C; --red:#C8262E; --stroke:#1A1E2B; --paper:#FFFDF6; --paper-line:#E9E1C8;
+  --pre:#F5CD5E; --root:#85C4FF; --cv:#23B39A; --suf:#EB6464; --conf:#123E8C; --chip-ink:#13213F;
+  --ok:#17905F; --ok-soft:#E1F5EC; --bad:#CC2F36; --bad-soft:#FCE6E7; --gold:#D9A300;
+  --t1:#2F7FD0; --t2:#D8434B; --pic:#FBF7F3;
+  --f-display:"Baloo 2","Arial Rounded MT Bold",system-ui,sans-serif;
+  --f-body:"Noto Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-ar:"Noto Sans Arabic","Segoe UI",Tahoma,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C1324; --surface:#141E36; --soft:#1B2745; --line:#2A3858; --ink:#E8EDF8; --muted:#9BA7C3; --navy:#94BAFF; --red:#FF7C82; --stroke:#0A0E19;
+  --paper:#18233E; --paper-line:#2E3C5E; --conf:#4C7FE0; --ok:#44D39A; --ok-soft:#133A2D; --bad:#FF7070; --bad-soft:#3D1C22; --gold:#FFC93C;
+  --t1:#7DB7FF; --t2:#FF7C82; --pic:#ECE6DE; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C1324; --surface:#141E36; --soft:#1B2745; --line:#2A3858; --ink:#E8EDF8; --muted:#9BA7C3; --navy:#94BAFF; --red:#FF7C82; --stroke:#0A0E19;
+  --paper:#18233E; --paper-line:#2E3C5E; --conf:#4C7FE0; --ok:#44D39A; --ok-soft:#133A2D; --bad:#FF7070; --bad-soft:#3D1C22; --gold:#FFC93C;
+  --t1:#7DB7FF; --t2:#FF7C82; --pic:#ECE6DE; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;margin:0;padding:0 16px 40px}
+button{font:inherit;color:inherit}
+button:focus-visible{outline:3px solid var(--navy);outline-offset:3px}
+.ar{font-family:var(--f-ar);direction:rtl}
+
+/* top bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--bg);border-bottom:1px solid var(--line);margin:0 -16px;padding:10px 16px}
+.bar-in{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brand{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2}
+.brand b{color:var(--navy);font-size:15px}
+.brand span{color:var(--navy);font-size:14px}
+.clock{display:flex;align-items:center;gap:8px;font-family:var(--f-display);font-weight:700;font-size:22px;color:var(--navy);font-variant-numeric:tabular-nums}
+.clock svg{width:24px;height:24px}
+.board{display:flex;gap:10px;align-items:center}
+.stat{display:flex;flex-direction:column;align-items:flex-end;line-height:1.1;padding:4px 10px;border-radius:12px;border:2px solid transparent}
+.stat small{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.stat strong{font-family:var(--f-display);font-size:22px;font-variant-numeric:tabular-nums}
+.stat.t1 small{color:var(--t1)} .stat.t2 small{color:var(--t2)}
+.stat.on.t1{border-color:var(--t1);background:var(--soft)} .stat.on.t2{border-color:var(--t2);background:var(--soft)}
+.icon-btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;width:40px;height:40px;display:grid;place-items:center;cursor:pointer}
+.icon-btn svg{width:20px;height:20px}
+
+main{max-width:1080px;margin:0 auto;padding-top:16px;display:grid;gap:14px}
+
+/* waiting room strip */
+.queue{display:flex;gap:6px;align-items:center;overflow-x:auto;padding:8px 10px;background:var(--surface);border:1px solid var(--line);border-radius:16px}
+.queue .lbl{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-inline-end:6px;flex:none}
+.qd{flex:none;width:38px;height:38px;border-radius:50%;border:2px dashed var(--line);display:grid;place-items:center;font-size:13px;font-weight:700;color:var(--muted);position:relative}
+.qd.gold{border-color:var(--gold)}
+.qd.now{border:3px solid var(--navy);color:var(--navy);background:var(--soft)}
+.qd.done{border-style:solid;border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.qd.done.low{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.qd.t1.done{box-shadow:0 0 0 3px var(--t1)} .qd.t2.done{box-shadow:0 0 0 3px var(--t2)}
+
+/* room */
+.room{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:860px){.room{grid-template-columns:1fr}}
+.patient{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:18px;display:grid;gap:12px;position:sticky;top:84px}
+@media (max-width:860px){.patient{position:static}}
+.p-head{display:flex;gap:12px;align-items:center}
+.avatar{width:96px;height:96px;flex:none}
+.avatar svg{width:100%;height:100%;display:block}
+.p-name{display:grid;line-height:1.2;min-width:0}
+.p-name b{font-size:20px}
+.p-name span{color:var(--muted);font-size:14px}
+.p-tag{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--red)}
+.say{background:var(--soft);border-radius:16px;padding:12px 14px;position:relative;display:grid;gap:4px;font-size:16px}
+.say::before{content:"";position:absolute;top:-10px;left:34px;border:10px solid transparent;border-top:0;border-bottom-color:var(--soft)}
+.say .ar{color:var(--muted);font-size:15px}
+.pic{margin:0;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:var(--pic)}
+.pic svg{display:block;width:100%;height:auto}
+.pic figcaption{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:6px 12px;font-size:13px;color:#4A5570;background:rgba(255,255,255,.6)}
+.pain{display:grid;gap:4px}
+.pain .pl{display:flex;justify-content:space-between;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pain .pl .ar{letter-spacing:0;text-transform:none}
+.pain .track{height:14px;border-radius:99px;background:var(--soft);overflow:hidden;border:1px solid var(--line)}
+.pain .fill{height:100%;border-radius:99px;transition:width .6s cubic-bezier(.3,1.4,.5,1),background .6s}
+.myst-tag{font-family:var(--f-display);font-weight:800;font-size:14px;background:#7A5BA6;color:#fff;border-radius:999px;padding:1px 10px}
+#splash.myst{background:radial-gradient(circle at 50% 40%,rgba(90,50,140,.94),rgba(20,10,40,.96))}
+.sp .myst{font-family:var(--f-display);font-weight:800;color:#E5D4FF;letter-spacing:.08em;text-transform:uppercase;animation:pulse 1s infinite}
+.say.thanks{background:var(--ok-soft)} .say.thanks::before{border-bottom-color:var(--ok-soft)}
+.say.meh{background:var(--bad-soft)} .say.meh::before{border-bottom-color:var(--bad-soft)}
+.streak{justify-self:start;font-family:var(--f-display);font-weight:800;font-size:18px;color:#fff;background:linear-gradient(90deg,#EB6464,#F5A142);border-radius:999px;padding:2px 14px;animation:pop .5s}
+.avatar.bounce svg{animation:jump .7s}
+.avatar.shake svg{animation:wob .5s}
+@keyframes jump{30%{transform:translateY(-12px)}60%{transform:translateY(0)}80%{transform:translateY(-4px)}}
+@keyframes wob{25%{transform:rotate(-8deg)}50%{transform:rotate(7deg)}75%{transform:rotate(-4deg)}}
+
+.chart{background:var(--paper);border:1px solid var(--paper-line);border-radius:22px;padding:20px clamp(16px,3vw,28px) 24px;display:grid;gap:16px;position:relative;min-width:0}
+.chart::before{content:"";position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:110px;height:22px;border-radius:8px;background:#9AA6BF;box-shadow:inset 0 -4px 0 rgba(0,0,0,.15)}
+.c-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline;border-bottom:2px dashed var(--paper-line);padding-bottom:10px}
+.c-head .t{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.c-head .m{font-weight:700;color:var(--red)}
+.gold-tag{font-family:var(--f-display);font-weight:800;font-size:14px;background:linear-gradient(90deg,#F5C542,#FFE9A8,#E0A800);color:#5A4100;border-radius:999px;padding:1px 10px}
+.turn{font-size:13px;font-weight:700;padding:2px 10px;border-radius:999px;color:#fff}
+.turn.t1{background:var(--t1)} .turn.t2{background:var(--t2)}
+
+.term{text-align:center;font-size:clamp(36px,6.4vw,62px);line-height:1.2;overflow-wrap:anywhere;min-height:1.2em}
+.w{font-family:var(--f-display);font-weight:800;-webkit-text-stroke:5px var(--stroke);paint-order:stroke fill;transition:color .35s}
+.w.plain{color:#FFFFFF} .w.pre{color:var(--pre)} .w.root{color:var(--root)} .w.cv{color:var(--cv)} .w.suf{color:var(--suf)}
+.w.pop{animation:pop .45s}
+@keyframes pop{40%{transform:scale(1.15)}}
+.w{display:inline-block}
+
+.rail{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.pill{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:5px 12px;border-radius:999px;border:2px solid var(--line);color:var(--muted);background:var(--surface)}
+.pill.now{border-color:var(--navy);color:var(--navy)}
+.pill.ok.suf,.pill.ok.pre,.pill.ok.root,.pill.ok.cv,.pill.ok.comb,.pill.ok.conf,.pill.ok.q{color:var(--chip-ink);border-color:transparent}
+.pill.ok.suf{background:var(--suf);color:#fff} .pill.ok.pre{background:var(--pre)} .pill.ok.root{background:var(--root)} .pill.ok.cv,.pill.ok.comb{background:var(--cv);color:#fff} .pill.ok.conf{background:var(--conf);color:#fff} .pill.ok.q{background:#B9C4D8}
+.pill.bad{border-color:var(--bad);color:var(--bad);background:var(--bad-soft)}
+
+.ask{display:grid;gap:4px}
+.ask .tag{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.tag.suf{color:#D23F3F} .tag.pre{color:#B98900} .tag.root{color:#2F7FD0} .tag.cv,.tag.comb{color:#12917A} .tag.conf{color:var(--navy)} .tag.q{color:var(--muted)}
+.ask h2{margin:0;font-size:clamp(19px,2.4vw,24px);line-height:1.3;text-wrap:balance}
+.ask h2 b{color:var(--navy)}
+.ask p{margin:0;color:var(--muted);font-size:16px}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.opts{grid-template-columns:1fr}}
+.opt{background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:13px 16px;font-size:18px;font-weight:700;cursor:pointer;text-align:start;display:flex;gap:12px;align-items:center;min-width:0;transition:transform .12s,border-color .15s,background .15s}
+.opt:hover:not(:disabled){border-color:var(--navy);transform:translateY(-2px)}
+.opt:disabled{cursor:default}
+.opt .key{flex:none;width:28px;height:28px;border-radius:8px;background:var(--soft);display:grid;place-items:center;font-family:var(--f-display);color:var(--navy);font-size:16px}
+.opt .lbl{min-width:0;overflow-wrap:anywhere}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt.dim{opacity:.45}
+.tools{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+.hint{border:2px dashed var(--navy);background:none;color:var(--navy);border-radius:12px;padding:7px 14px;font-weight:700;font-size:14px;cursor:pointer}
+.hint:disabled{opacity:.35;cursor:default}
+.hint-box{background:#FFF6D8;border:1px solid #F1D98A;color:#3A3220;border-radius:12px;padding:10px 14px;font-size:15px}
+.notes{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.notes li{display:flex;gap:10px;align-items:baseline;font-size:15px;padding:6px 10px;border-radius:10px;background:var(--surface);border:1px solid var(--paper-line);animation:slide .3s}
+@keyframes slide{from{transform:translateY(-6px);opacity:0}}
+.notes i{font-style:normal;font-weight:800;flex:none;width:20px;text-align:center}
+.notes .y i{color:var(--ok)} .notes .n i{color:var(--bad)}
+.notes .ar{margin-inline-start:auto;color:var(--muted)}
+
+/* order */
+.order-slots{display:grid;gap:8px}
+.slot{min-height:52px;border:2px dashed var(--line);border-radius:14px;display:flex;align-items:center;gap:12px;padding:6px 12px;color:var(--muted);font-weight:700}
+.slot .n{font-family:var(--f-display);font-size:20px;width:26px;text-align:center}
+.slot.filled{border-style:solid;color:var(--ink);background:var(--surface)}
+.chip{font-weight:800;letter-spacing:.06em;font-size:13px;padding:5px 12px;border-radius:9px;color:var(--chip-ink);flex:none}
+.chip.suf{background:var(--suf);color:#fff} .chip.pre{background:var(--pre)} .chip.root{background:var(--root)} .chip.cv{background:var(--cv);color:#fff} .chip.conf{background:var(--conf);color:#fff}
+.order-bank{display:grid;gap:8px}
+.ocard{display:flex;gap:12px;align-items:center;text-align:start;background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:10px 12px;cursor:pointer;font-weight:600}
+.ocard:hover{border-color:var(--navy)}
+.ocard .ar{margin-inline-start:auto;color:var(--muted);font-size:14px}
+.ocard.no{animation:wob2 .4s;border-color:var(--bad)}
+@keyframes wob2{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* sort */
+.sort-card{justify-self:center;background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:10px 28px;font-size:clamp(30px,5vw,44px);box-shadow:0 6px 0 var(--paper-line)}
+.bins{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+@media (max-width:640px){.bins{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.bin{border:2px solid rgba(0,0,0,.12);border-radius:14px;padding:10px 8px;cursor:pointer;display:grid;gap:2px;justify-items:center;background:var(--suf);color:#fff;font-weight:700;transition:transform .12s}
+.bin:hover:not(:disabled){transform:translateY(-3px)}
+.bin b{font-family:var(--f-display);font-size:22px;line-height:1}
+.bin span{font-size:13px;text-align:center}
+.bin small{font-family:var(--f-ar);font-size:13px}
+.bin .cnt{background:rgba(255,255,255,.25);border-radius:999px;padding:0 8px;font-size:12px;margin-top:2px}
+.bin.flash{outline:4px solid var(--ok);outline-offset:2px}
+.sort-left{text-align:center;color:var(--muted);font-size:14px}
+
+/* match */
+.match{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:10px}
+@media (max-width:560px){.match{grid-template-columns:1fr}}
+.mcol{display:grid;gap:8px}
+.mbtn{background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:10px 12px;text-align:start;font-weight:700;cursor:pointer;min-height:50px}
+.mbtn.sel{border-color:var(--navy);background:var(--soft)}
+.mbtn.done{cursor:default;border-color:var(--ok);background:var(--ok-soft)}
+.mbtn.no{animation:wob2 .4s;border-color:var(--bad)}
+.mbtn .pn{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--ok);color:#fff;font-size:12px;margin-inline-end:8px}
+
+/* treated panel */
+.treated{border-radius:18px;padding:18px 20px;display:grid;gap:10px;background:var(--surface);border:2px solid var(--line);position:relative;animation:slide .35s}
+.stamp{position:absolute;top:14px;right:16px;transform:rotate(-8deg);border:3px solid var(--ok);color:var(--ok);font-family:var(--f-display);font-weight:800;font-size:20px;padding:0 10px;border-radius:8px;letter-spacing:.08em}
+.stamp.low{border-color:var(--bad);color:var(--bad)}
+.stars{display:flex;gap:6px;align-items:center}
+.stars svg{width:34px;height:34px}
+.stars .st{opacity:.25;transform:scale(.8);transition:all .3s}
+.stars .st.on{opacity:1;transform:scale(1)}
+.stars .pts{font-family:var(--f-display);font-size:20px;color:var(--ok);margin-inline-start:6px}
+.out{display:grid;gap:10px}
+.out .w{font-size:clamp(28px,4.6vw,42px);-webkit-text-stroke:4px var(--stroke)}
+.out.many .w{font-size:clamp(22px,3.4vw,30px);-webkit-text-stroke:3.5px var(--stroke)}
+.orow{display:grid;gap:2px}
+.orow .sl{font-weight:700;font-size:15px}
+.orow .mm{display:flex;justify-content:space-between;gap:4px 16px;flex-wrap:wrap;font-weight:600}
+.c-pre{color:#B98900} .c-root{color:#2F7FD0} .c-cv{color:#12917A} .c-suf{color:#D23F3F} .sl .sep{color:var(--muted);padding:0 3px}
+.tnote{margin:0;color:var(--muted);font-size:15px}
+.actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.btn{border:none;border-radius:14px;padding:13px 26px;font-weight:700;font-size:17px;cursor:pointer;background:var(--navy);color:var(--surface);box-shadow:0 3px 0 rgba(0,0,0,.25);transition:transform .12s}
+.btn:hover:not(:disabled){transform:translateY(-2px)}
+.btn:disabled{opacity:.4;cursor:default}
+.mlist{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.mlist li{display:flex;gap:10px;align-items:center;font-weight:600}
+
+/* start/end */
+.hero{background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:26px clamp(16px,4vw,40px);display:grid;gap:16px;justify-items:center;text-align:center}
+.hero h1{margin:0;font-size:clamp(48px,10vw,96px);line-height:1}
+.hero .tagline{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-size:14px}
+.hero .tagline span{padding:4px 12px;border-radius:999px}
+.hero p{margin:0;max-width:62ch;color:var(--muted);font-size:17px}
+.lineup{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
+.lineup .avatar{width:64px;height:64px}
+.how{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;width:100%;text-align:start}
+@media (max-width:700px){.how{grid-template-columns:1fr}}
+.how div{background:var(--soft);border-radius:14px;padding:14px 16px;display:grid;gap:2px}
+.how b{color:var(--navy)} .how span{font-size:15px;color:var(--muted)} .how .ar{font-size:14px}
+.modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%;max-width:620px}
+@media (max-width:520px){.modes{grid-template-columns:1fr}}
+.mode-btn{border:2px solid var(--navy);background:var(--surface);border-radius:18px;padding:16px;cursor:pointer;display:grid;gap:2px;transition:transform .12s}
+.mode-btn:hover{transform:translateY(-3px);background:var(--soft)}
+.mode-btn b{font-family:var(--f-display);font-size:26px;color:var(--navy)} .mode-btn span{font-size:14px;color:var(--muted)}
+.report{width:100%;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;text-align:start}
+.report div{display:flex;gap:10px;align-items:center;background:var(--soft);border-radius:12px;padding:6px 10px;min-width:0}
+.report .avatar{width:40px;height:40px}
+.report .rt{display:grid;line-height:1.25;min-width:0}
+.report .rt b{font-size:14px;overflow-wrap:anywhere} .report .rt span{font-size:12px;color:var(--muted)}
+.report .rs{margin-inline-start:auto;font-weight:800;color:var(--gold);flex:none;font-size:15px;letter-spacing:1px}
+.hero .rank{font-family:var(--f-display);font-size:clamp(34px,6vw,54px);color:var(--navy);margin:0;line-height:1.05}
+.podium{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.pod{min-width:170px;border-radius:18px;padding:12px 20px;display:grid;justify-items:center;background:var(--soft);border:3px solid transparent}
+.pod small{font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:12px}
+.pod.t1 small{color:var(--t1)} .pod.t2 small{color:var(--t2)}
+.pod strong{font-family:var(--f-display);font-size:42px;line-height:1.1}
+.pod.win{border-color:var(--gold)}
+
+/* splash */
+#splash{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:16px;background:rgba(9,22,56,.86);backdrop-filter:blur(4px);color:#fff}
+#splash[hidden]{display:none!important}
+#splash.gold{background:radial-gradient(circle at 50% 40%,rgba(120,86,0,.92),rgba(20,14,0,.95))}
+.sp{display:grid;justify-items:center;gap:6px;text-align:center;animation:zoom .5s cubic-bezier(.2,1.4,.4,1)}
+@keyframes zoom{from{transform:scale(.6);opacity:0}}
+.sp .avatar{width:150px;height:150px;animation:walk 1s ease-out}
+@keyframes walk{from{transform:translateX(-120px);opacity:0}}
+.sp .time{font-family:var(--f-display);font-size:22px;color:#C9D6F2}
+.sp .who{font-family:var(--f-display);font-weight:800;font-size:clamp(36px,7vw,60px);line-height:1}
+.sp .sub{color:#C9D6F2;font-size:18px}
+.sp .gold{font-family:var(--f-display);font-weight:800;color:#FFE9A8;letter-spacing:.08em;text-transform:uppercase;animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.5}}
+.sp .team{font-weight:700;font-size:18px;padding:4px 14px;border-radius:999px}
+.sp .team.t1{background:#2F7FD0} .sp .team.t2{background:#D8434B}
+.sp .btn{background:#fff;color:#123E8C;margin-top:10px}
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:30}
+footer{max-width:1080px;margin:16px auto 0;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+footer b{color:var(--navy);letter-spacing:.1em;font-size:12px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="bar"><div class="bar-in">
+  <div class="brand"><b>Dental Medical Terminology · Lecture 3</b><span class="ar">مصطلحات طب الأسنان الطبية</span></div>
+  <div class="clock" aria-label="Clinic time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="time">8:30</span></div>
+  <div class="board" id="board"></div>
+  <button class="icon-btn" id="snd" aria-label="Sound on" title="Sound"></button>
+</div></div>
+
+<main>
+  <div class="queue" id="queue" aria-label="Waiting room"></div>
+  <div id="stage"></div>
+</main>
+<footer><b>DECODE → PREDICT → CONFIRM</b><span class="ar">حلّل ← توقّع ← تأكّد</span></footer>
+<div id="splash" hidden></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<script>
+const $=s=>document.querySelector(s);
+const h=(t,c,html)=>{const e=document.createElement(t);if(c)e.className=c;if(html!=null)e.innerHTML=html;return e};
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ================= SOUND ================= */
+let ac=null,soundOn=true;
+function tone(f,d,type='sine',t0=0,vol=.1,f2){if(!soundOn)return;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const t=ac.currentTime+t0,o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+d+.02)}catch(e){}}
+const S={
+  bell:()=>{tone(784,.5,'sine',0,.12);tone(622,.7,'sine',.32,.12)},
+  click:()=>tone(520,.05,'sine',0,.05),
+  step:()=>{tone(660,.09,'triangle',0,.08);tone(990,.12,'triangle',.07,.08)},
+  bad:()=>{tone(160,.28,'sawtooth',0,.05);tone(120,.3,'sawtooth',.12,.05)},
+  hint:()=>{tone(880,.12,'sine',0,.06,1320)},
+  star:i=>tone(880+i*220,.18,'sine',0,.09),
+  done:()=>{[523,659,784,1046].forEach((f,i)=>tone(f,.18,'sine',i*.09,.09))},
+  sad:()=>{[392,349,311].forEach((f,i)=>tone(f,.3,'triangle',i*.22,.08))},
+  gold:()=>{[784,988,1175,1568].forEach((f,i)=>tone(f,.2,'square',i*.08,.035))},
+  drill:()=>tone(1400,.35,'sawtooth',0,.015,1700),
+};
+const SND_ON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const SND_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+$('#snd').innerHTML=SND_ON;
+$('#snd').onclick=()=>{soundOn=!soundOn;$('#snd').innerHTML=soundOn?SND_ON:SND_OFF;$('#snd').setAttribute('aria-label',soundOn?'Sound on':'Sound off')};
+
+/* ================= CONFETTI ================= */
+const fx=$('#fx'),ctx=fx.getContext('2d');let bits=[],raf=0;
+function size(){fx.width=innerWidth*devicePixelRatio;fx.height=innerHeight*devicePixelRatio}addEventListener('resize',size);size();
+function confetti(n=80,gold=false){if(reduce)return;const c=gold?['#F5C542','#FFE08A','#E0A800','#fff']:['#F5CD5E','#85C4FF','#23B39A','#EB6464','#fff'],W=fx.width,H=fx.height,d=devicePixelRatio;
+  for(let i=0;i<n;i++)bits.push({x:W/2+(Math.random()-.5)*W*.4,y:H*.3,vx:(Math.random()-.5)*20*d,vy:(-Math.random()*16-6)*d,r:Math.random()*6,vr:(Math.random()-.5)*.3,w:(5+Math.random()*8)*d,h:(4+Math.random()*5)*d,c:c[i%c.length],l:0});
+  if(!raf)loop()}
+function loop(){ctx.clearRect(0,0,fx.width,fx.height);bits.forEach(p=>{p.vy+=.5*devicePixelRatio;p.x+=p.vx;p.y+=p.vy;p.vx*=.985;p.r+=p.vr;p.l++;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.fillStyle=p.c;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore()});bits=bits.filter(p=>p.y<fx.height+40&&p.l<240);raf=bits.length?requestAnimationFrame(loop):(ctx.clearRect(0,0,fx.width,fx.height),0)}
+
+/* ================= AVATARS ================= */
+function avatar(a,mood='worried'){
+  const sk=a.skin,hr=a.hair,kid=a.kid;
+  let s=`<svg viewBox="0 0 120 120" role="img" aria-label="${a.alt||'patient'}"><circle cx="60" cy="60" r="58" style="fill:var(--soft)"/>`;
+  s+=`<path d="M14 120 C18 92 40 84 60 84 C80 84 102 92 106 120Z" fill="${a.coat?'#FFFFFF':a.shirt}" stroke="${a.coat?'#C9D2E2':'none'}"/>`;
+  if(a.coat)s+=`<path d="M52 86 L60 104 L68 86" fill="none" stroke="#9AA6BF" stroke-width="2"/><path d="M44 96 C44 110 50 114 56 112" fill="none" stroke="#5A6784" stroke-width="2.4"/><circle cx="56" cy="112" r="3" fill="#5A6784"/><rect x="74" y="96" width="12" height="4" rx="1" fill="${a.shirt}"/>`;
+  if(a.style==='hijab')s+=`<path d="M24 72 C20 30 40 12 60 12 C80 12 100 30 96 72 C96 96 84 102 60 102 C36 102 24 96 24 72Z" fill="${hr}"/>`;
+  else s+=`<rect x="53" y="72" width="14" height="16" fill="${sk}"/>`;
+  if(a.style==='long')s+=`<path d="M32 54 C30 28 44 18 60 18 C76 18 90 28 88 54 L92 92 C80 98 40 98 28 92Z" fill="${hr}"/>`;
+  if(a.style!=='hijab')s+=`<ellipse cx="35" cy="58" rx="4" ry="6" fill="${sk}"/><ellipse cx="85" cy="58" rx="4" ry="6" fill="${sk}"/>`;
+  s+=`<ellipse cx="60" cy="56" rx="${kid?24:25}" ry="${kid?26:29}" fill="${sk}"/>`;
+  if(a.style==='short'||a.style==='long')s+=`<path d="M35 50 C33 30 46 21 60 21 C76 21 88 30 85 50 C80 39 70 35 60 35 C50 35 40 39 35 50Z" fill="${hr}"/>`;
+  if(a.style==='curly')s+=[[40,36,9],[50,28,10],[62,26,10],[74,30,10],[82,40,8],[36,46,6],[86,50,6]].map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${hr}"/>`).join('');
+  if(a.style==='bald')s+=`<path d="M35 58 C34 48 36 44 38 42 M85 58 C86 48 84 44 82 42" stroke="${hr}" stroke-width="5" fill="none" stroke-linecap="round"/>`;
+  if(a.pigtails)s+=`<circle cx="32" cy="40" r="8" fill="${hr}"/><circle cx="88" cy="40" r="8" fill="${hr}"/>`;
+  if(a.beard)s+=`<path d="M38 62 C40 82 50 88 60 88 C70 88 80 82 82 62 C76 74 68 78 60 78 C52 78 44 74 38 62Z" fill="${hr}" opacity=".85"/>`;
+  s+=`<ellipse cx="45" cy="66" rx="5" ry="3" fill="#F09AA3" opacity=".45"/><ellipse cx="75" cy="66" rx="5" ry="3" fill="#F09AA3" opacity=".45"/>`;
+  if(a.swell)s+=`<ellipse cx="80" cy="68" rx="10" ry="11" fill="#EE7F89" opacity=".65"/>`;
+  const er=kid?3.3:2.8;
+  if(mood==='happy')s+=`<path d="M46 59 Q51 53 56 59 M64 59 Q69 53 74 59" stroke="#1d1d1d" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+  else s+=`<circle cx="51" cy="58" r="${er}" fill="#1d1d1d"/><circle cx="69" cy="58" r="${er}" fill="#1d1d1d"/><circle cx="52" cy="57" r="1" fill="#fff"/><circle cx="70" cy="57" r="1" fill="#fff"/>`;
+  if(mood==='happy')s+=`<path d="M45 49 Q51 46 56 49 M64 49 Q69 46 75 49" stroke="#3a2a22" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+  else s+=`<path d="M45 51 L56 47 M64 47 L75 51" stroke="#3a2a22" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+  if(a.glasses)s+=`<circle cx="51" cy="58" r="7.5" fill="none" stroke="#333" stroke-width="1.8"/><circle cx="69" cy="58" r="7.5" fill="none" stroke="#333" stroke-width="1.8"/><path d="M58.5 58 L61.5 58" stroke="#333" stroke-width="1.8"/>`;
+  const lc=a.lips?'#D9414C':'#7a3b33',lw=a.lips?4:2.4;
+  if(mood==='happy')s+=`<path d="M50 70 Q60 81 70 70 Q60 75 50 70Z" fill="#fff" stroke="${lc}" stroke-width="${lw-.6}" stroke-linejoin="round"/>`;
+  else if(mood==='sad')s+=`<path d="M51 76 Q60 68 69 76" stroke="${lc}" stroke-width="${lw}" fill="none" stroke-linecap="round"/>`;
+  else s+=`<path d="M51 73 Q55.5 70 60 73 Q64.5 76 69 73" stroke="${lc}" stroke-width="${lw}" fill="none" stroke-linecap="round"/>`;
+  if(a.lips&&mood!=='happy')s+=`<path d="M54 76 l2 -3 M60 77 l1 -3 M65 76 l2 -3" stroke="#F7D0C8" stroke-width="1.2"/>`;
+  if(mood==='sad'||mood==='worried')s+=`<path d="M84 46 q3 5 0 7 q-3 -2 0 -7z" fill="#7CC4F5" opacity="${mood==='sad'?1:.8}"/>`;
+  return s+'</svg>';
+}
+
+/* ================= PICTURES ================= */
+const pores=p=>p.map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="#E0C697"/>`).join('');
+const glow=(id,c='#FF2E3A',o=.55)=>`<radialGradient id="${id}"><stop offset="0" stop-color="${c}" stop-opacity="${o}"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>`;
+const PIC={
+ lips:`<svg viewBox="0 0 360 200" role="img" aria-label="Red, dry, cracked lips"><defs>${glow('gl1')}</defs><rect width="360" height="200" fill="#F2C9A6"/>
+  <circle cx="64" cy="102" r="30" fill="url(#gl1)"/><circle cx="296" cy="102" r="30" fill="url(#gl1)"/>
+  <path d="M60 102 C100 66 150 58 180 78 C210 58 260 66 300 102 C260 108 220 106 180 108 C140 106 100 108 60 102Z" fill="#E06470" stroke="#B83A47" stroke-width="2"/>
+  <path d="M60 102 C100 112 140 114 180 112 C220 114 260 112 300 102 C272 152 222 164 180 164 C138 164 88 152 60 102Z" fill="#DC4E5B" stroke="#B83A47" stroke-width="2"/>
+  <path d="M60 102 C120 110 240 110 300 102" stroke="#7E1F2B" stroke-width="3" fill="none"/>
+  <g stroke="#FBE0D6" stroke-width="2.2" fill="none" stroke-linecap="round"><path d="M110 128 l6 -10 l4 8"/><path d="M150 140 l4 -14 l5 10"/><path d="M196 142 l3 -13 l6 9"/><path d="M236 132 l5 -12 l4 9"/><path d="M128 84 l5 8 l4 -6"/><path d="M226 82 l4 8 l5 -7"/></g>
+  <g fill="#F7E4D8"><circle cx="170" cy="150" r="2"/><circle cx="214" cy="152" r="1.6"/><circle cx="138" cy="146" r="1.8"/></g></svg>`,
+ lipcut:`<svg viewBox="0 0 360 200" role="img" aria-label="Lips with a deep vertical cut on the lower lip"><rect width="360" height="200" fill="#F2C9A6"/>
+  <path d="M60 102 C100 70 150 62 180 80 C210 62 260 70 300 102 C260 108 220 106 180 108 C140 106 100 108 60 102Z" fill="#E08A90" stroke="#B85A64" stroke-width="2"/>
+  <path d="M60 102 C100 112 140 114 180 112 C220 114 260 112 300 102 C272 152 222 164 180 164 C138 164 88 152 60 102Z" fill="#DB7A82" stroke="#B85A64" stroke-width="2"/>
+  <path d="M60 102 C120 110 240 110 300 102" stroke="#7E1F2B" stroke-width="3" fill="none"/>
+  <path d="M206 112 L198 132 L210 146 L202 162" stroke="#8E1A26" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <g stroke="#1A1E2B" stroke-width="2" stroke-linecap="round"><path d="M192 122 l16 6"/><path d="M194 138 l18 2"/><path d="M196 154 l16 -2"/></g>
+  <text x="250" y="186" font-family="Noto Sans,sans-serif" font-size="13" font-weight="700" fill="#8E1A26">cheil- = lip</text></svg>`,
+ mouth:(()=>{let t='';for(let i=0;i<8;i++){const x=104+i*19;t+=`<rect x="${x}" y="40" width="17" height="22" rx="5" fill="#FFFDF6" stroke="#D8D0BF"/>`}let b='';for(let i=0;i<7;i++){const x=114+i*19;b+=`<rect x="${x}" y="140" width="17" height="18" rx="5" fill="#FFFDF6" stroke="#D8D0BF"/>`}
+  return `<svg viewBox="0 0 360 200" role="img" aria-label="Open mouth with several painful sores on the inner cheeks and tongue"><rect width="360" height="200" fill="#F2C9A6"/>
+  <ellipse cx="180" cy="100" rx="128" ry="84" fill="#E07B80" stroke="#B8505A" stroke-width="2"/><ellipse cx="180" cy="100" rx="106" ry="66" fill="#5A1E26"/>
+  <ellipse cx="96" cy="100" rx="22" ry="40" fill="#D9646E"/><ellipse cx="264" cy="100" rx="22" ry="40" fill="#D9646E"/>${t}${b}
+  <ellipse cx="180" cy="120" rx="64" ry="30" fill="#E88C93"/><path d="M180 98 L180 140" stroke="#C9646E" stroke-width="2"/>
+  <g fill="#F6EBD0" stroke="#E2373F" stroke-width="3"><ellipse cx="94" cy="92" rx="9" ry="6"/><ellipse cx="98" cy="118" rx="6" ry="4.5"/><ellipse cx="266" cy="96" rx="8" ry="6"/><ellipse cx="200" cy="118" rx="7" ry="5"/><ellipse cx="156" cy="126" rx="5.5" ry="4"/></g></svg>`})(),
+ apico:`<svg viewBox="0 0 360 210" role="img" aria-label="Tooth in bone with the tip of its root cut off and lifted away"><defs><linearGradient id="en2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#EAE4D6"/></linearGradient></defs><rect width="360" height="210" fill="#FBF7F3"/>
+  <rect x="0" y="78" width="360" height="132" fill="#F1DFBF"/>${pores([[30,120,5],[70,170,4],[110,140,3],[260,120,4],[300,180,5],[330,140,3],[90,196,3],[250,196,4]])}
+  <path d="M0 64 C60 60 110 62 138 70 L222 70 C250 62 300 60 360 64 L360 96 L0 96Z" fill="#F09AA3" stroke="#D0707C" stroke-width="1.5"/>
+  <ellipse cx="184" cy="172" rx="34" ry="20" fill="#C9855F" opacity=".55"/>
+  <path d="M142 70 L218 70 C214 100 204 128 198 150 L162 150 C156 128 146 100 142 70Z" fill="#F2E2C3" stroke="#8E8674" stroke-width="2"/>
+  <path d="M140 72 C132 42 140 18 160 20 C168 12 192 12 200 20 C220 18 228 42 220 72Z" fill="url(#en2)" stroke="#6F7486" stroke-width="2"/>
+  <path d="M150 150 H212" stroke="#C8262E" stroke-width="2.5" stroke-dasharray="6 4"/>
+  <g transform="translate(26 14) rotate(18 180 168)"><path d="M164 156 L196 156 C192 170 186 182 180 186 C174 182 168 170 164 156Z" fill="#E9A4A0" stroke="#8E8674" stroke-width="2"/></g>
+  <path d="M286 110 L300 104 M250 186 L286 112" stroke="#6B7280" stroke-width="5" stroke-linecap="round"/><path d="M262 190 L292 116" stroke="#9CA3AF" stroke-width="4" stroke-linecap="round"/>
+  <text x="18" y="150" font-family="Noto Sans,sans-serif" font-size="13" font-weight="700" fill="#C8262E">cut line</text><path d="M80 146 H146" stroke="#C8262E" stroke-width="1.5"/>
+  <text x="18" y="196" font-family="Noto Sans,sans-serif" font-size="13" font-weight="700" fill="#123E8C">apex (root tip)</text><path d="M120 192 Q170 196 200 186" stroke="#123E8C" stroke-width="1.5" fill="none"/></svg>`,
+ teeth:(mode)=>{let s=`<svg viewBox="0 0 360 170" role="img" aria-label="${mode==='gap'?'Upper front teeth with one tooth missing':'Upper front teeth with one tooth much smaller than the others'}"><rect width="360" height="170" fill="#FBF7F3"/><path d="M14 30 Q180 6 346 30 L346 82 L14 82Z" fill="#F09AA3"/>`;
+  const xs=[24,78,132,186,240,294],w=50;
+  xs.forEach((x,i)=>{if(i===3&&mode==='gap'){s+=`<path d="M${x+6} 72 Q${x+w/2} 96 ${x+w-6} 72Z" fill="#D9646E"/>`;return}
+   const ww=(i===3&&mode==='small')?28:w-4,hh=(i===3&&mode==='small')?50:(i===2||i===3?96:86),xx=(i===3&&mode==='small')?x+(w-28)/2:x+2;
+   s+=`<path d="M${xx} 66 L${xx+ww} 66 L${xx+ww-3} ${66+hh-14} Q${xx+ww/2} ${66+hh+6} ${xx+3} ${66+hh-14}Z" fill="#FFFDF6" stroke="#9C8F78" stroke-width="2"/>`});
+  s+=`<path d="M14 56 ${xs.map(x=>`Q${x+25} 82 ${x+52} 58`).join(' ')} L346 30 L14 30Z" fill="#F09AA3"/>`;
+  s+=`<path d="M211 6 V48" stroke="#13213F" stroke-width="3.5"/><path d="M203 40 L211 54 L219 40Z" fill="#13213F"/></svg>`;return s},
+ pulp:`<svg viewBox="0 0 360 220" role="img" aria-label="Tooth cut in half showing the pulp, with an instrument entering the pulp from the top"><rect width="360" height="220" fill="#FBF7F3"/>
+  <rect x="0" y="112" width="360" height="108" fill="#F1DFBF"/>${pores([[40,150,5],[80,196,4],[300,150,5],[320,200,3],[270,190,4]])}
+  <path d="M0 100 C70 96 110 100 128 108 L232 108 C250 100 290 96 360 100 L360 126 L0 126Z" fill="#F09AA3"/>
+  <path d="M128 110 C116 66 124 30 152 28 C164 18 196 18 208 28 C236 30 244 66 232 110 C230 150 222 196 210 214 L196 214 C192 186 188 160 180 150 C172 160 168 186 164 214 L150 214 C138 196 130 150 128 110Z" fill="#F4E6C8" stroke="#6F7486" stroke-width="2.5"/>
+  <path d="M152 74 C152 62 208 62 208 74 L206 104 C204 120 198 128 194 140 L190 204 L184 204 C184 170 182 150 180 142 C178 150 176 170 176 204 L170 204 L166 140 C162 128 156 120 154 104Z" fill="#E9707A"/>
+  <path d="M150 72 C150 58 210 58 210 72 L208 104 L152 104Z" fill="none" stroke="#C8262E" stroke-width="2" stroke-dasharray="5 4"/>
+  <g transform="rotate(28 250 40)"><rect x="236" y="-30" width="16" height="70" rx="4" fill="#9CA3AF"/><rect x="240" y="40" width="8" height="30" fill="#6B7280"/><circle cx="244" cy="72" r="5" fill="#6B7280"/></g>
+  <text x="250" y="88" font-family="Noto Sans,sans-serif" font-size="13" font-weight="700" fill="#C8262E">pulp</text><path d="M246 84 L210 84" stroke="#C8262E" stroke-width="1.5"/></svg>`,
+ peri:`<svg viewBox="0 0 360 210" role="img" aria-label="Lower molars; the last wisdom tooth is half erupted with a red swollen gum flap over its crown"><defs>${glow('gl2')}<linearGradient id="en3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#EAE4D6"/></linearGradient></defs><rect width="360" height="210" fill="#FBF7F3"/>
+  <path d="M0 160 H360 V210 H0Z" fill="#F1DFBF"/>${pores([[30,182,4],[70,195,3],[120,178,5],[170,196,3],[215,183,4],[262,197,3],[300,180,5]])}
+  <ellipse cx="290" cy="118" rx="72" ry="54" fill="url(#gl2)"/>
+  ${[[38,70,0],[122,68,0],[226,86,-7]].map(([x,y,r])=>`<g transform="translate(${x} ${y}) rotate(${r} 35 30)"><path d="M6 62 C0 30 6 8 20 10 C26 0 44 0 50 10 C64 8 70 30 64 62Z" fill="url(#en3)" stroke="#6F7486" stroke-width="2"/><path d="M20 16 q8 8 15 2 q7 6 15 -2" fill="none" stroke="#B9B4A6" stroke-width="2" stroke-linecap="round"/></g>`).join('')}
+  <path d="M0 132 C20 128 34 126 44 126 C70 124 92 124 108 128 Q119 108 128 126 C150 122 176 122 192 128 Q208 110 222 130 C236 132 250 126 262 116 C278 98 314 100 322 122 C330 136 346 138 360 138 V172 H0Z" fill="#F09AA3" stroke="#D0707C" stroke-width="2"/>
+  <path d="M258 118 C274 96 314 98 324 122 C318 132 300 136 282 132 C270 130 262 126 258 118Z" fill="#E4434F" opacity=".9"/></svg>`,
+ sial:`<svg viewBox="0 0 360 210" role="img" aria-label="Side view of a face with a swollen, inflamed salivary gland in front of the ear and below the jaw"><defs>${glow('gl3','#FF2E3A',.6)}</defs><rect width="360" height="210" fill="#FBF7F3"/>
+  <path d="M110 20 C170 0 246 14 266 66 C272 84 270 96 282 108 L296 124 C298 128 294 131 288 131 L284 133 C288 141 286 147 280 149 C284 157 278 163 270 163 C266 178 250 184 230 180 L214 178 C206 192 200 210 200 210 L104 210 C108 176 98 152 90 132 C74 100 76 44 110 20Z" fill="#F2C9A6" stroke="#C9956F" stroke-width="2"/>
+  <path d="M110 20 C150 6 200 8 230 28 C200 26 160 30 130 50 C112 62 100 80 96 100 C84 70 90 36 110 20Z" fill="#3B2A20"/>
+  <ellipse cx="150" cy="104" rx="13" ry="21" fill="#E3B08C" stroke="#C9956F" stroke-width="2"/>
+  <circle cx="168" cy="140" r="48" fill="url(#gl3)"/><ellipse cx="166" cy="140" rx="26" ry="30" fill="#F08A92" stroke="#C8262E" stroke-width="2"/>
+  <path d="M190 132 C214 132 236 140 256 150" stroke="#C8262E" stroke-width="2" stroke-dasharray="4 4" fill="none"/>
+  <path d="M262 156 q6 10 0 14 q-6 -4 0 -14z" fill="#5BB4F5"/>
+  <text x="18" y="196" font-family="Noto Sans,sans-serif" font-size="13" font-weight="700" fill="#C8262E">salivary gland</text><path d="M110 192 Q140 184 156 168" stroke="#C8262E" stroke-width="1.5" fill="none"/></svg>`,
+};
+
+/* ================= CONTENT ================= */
+const Q={
+ suf:['Start from the end. What is the <b>suffix</b>?','ابدأ من النهاية: ما هي اللاحقة؟'],
+ pre:['Is there a <b>prefix</b>?','هل توجد سابقة؟'],
+ comb:['Combine the parts. What does the term <b>literally suggest</b>?','اجمع الأجزاء: ما المعنى المتوقع؟'],
+ conf:['Now <b>confirm</b> the accepted clinical meaning.','تأكّد من المعنى السريري الدقيق.'],
+};
+const TAG={suf:'Suffix',pre:'Prefix',root:'Root',cv:'Combining vowel',comb:'Combine',conf:'Confirm',q:'Check'};
+const P=[
+ {name:'Layla',role:'24 years old',av:{skin:'#F0C29E',hair:'#6B3E26',style:'long',shirt:'#F5CD5E',lips:true},pic:'lips',cap:['Dry, red, cracked lips','شفاه جافة ومتشققة'],
+  say:'My lips are dry, red and cracked, and they hurt.',sayAr:'شفتاي جافتان ومتشققتان وتؤلمانني.',
+  parts:[['cheil','root'],['itis','suf']],mean:'Inflammation of the lip',meanAr:'التهاب الشفة',note:'Root + Suffix. No prefix and no combining vowel.',
+  steps:[
+   {k:'suf',opts:['-itis','-ectomy','-tomy','-plasty'],ans:'-itis',rv:[1],log:['-itis = inflammation','التهاب'],h:'Which ending means inflammation?'},
+   {k:'pre',opts:['No prefix','chei-','ch-'],ans:'No prefix',log:['No prefix here','لا توجد سابقة'],h:'Do not force a prefix that is not there.'},
+   {k:'root',q:['<b>cheil</b> names which structure?','إلى أي تركيب يشير الجذر cheil؟'],opts:['lip','mouth','tooth','gland'],ans:'lip',rv:[0],log:['cheil = lip','الشفة'],h:'Look at where Layla is pointing.'},
+   {k:'comb',opts:['Inflammation of the lip','Inflammation of the mouth','Surgical removal of the lip','A condition of small lips'],ans:'Inflammation of the lip',log:['cheilitis = inflammation of the lip','التهاب الشفة'],h:'Root meaning + suffix meaning.'}]},
+ {name:'Omar',role:'31 years old',av:{skin:'#C98E66',hair:'#1E1A18',style:'short',shirt:'#85C4FF',beard:true},pic:'mouth',cap:['Painful sores inside the mouth','تقرّحات مؤلمة داخل الفم'],
+  say:'I have painful sores all over the inside of my mouth.',sayAr:'عندي تقرّحات مؤلمة داخل فمي.',
+  parts:[['stomat','root'],['itis','suf']],mean:'Inflammation of the mouth / oral mucosa',meanAr:'التهاب الفم',note:'Same suffix + different root = different structure affected.',
+  steps:[
+   {k:'suf',opts:['-itis','-tomy','-ia','-ectomy'],ans:'-itis',rv:[1],log:['-itis = inflammation','التهاب'],h:'The ending is the same one Layla had.'},
+   {k:'root',q:['<b>stomat</b> names which structure?','إلى أي تركيب يشير الجذر stomat؟'],opts:['mouth','lip','tooth','gland'],ans:'mouth',rv:[0],log:['stomat = mouth','الفم'],h:'Omar’s problem is inside it.'},
+   {k:'comb',opts:['Inflammation of the mouth / oral mucosa','Inflammation of the lip','Incision into the mouth','Removal of the mouth lining'],ans:'Inflammation of the mouth / oral mucosa',log:['stomatitis = inflammation of the mouth','التهاب الفم'],h:'stomat + itis.'},
+   {k:'q',tag:'Compare',q:['Compare <b>cheilitis</b> and <b>stomatitis</b>. What changed?','قارن بين المصطلحين: ما الذي تغيّر؟'],opts:['The root','The suffix','The prefix'],ans:'The root',keep:true,log:['Only the root changed','الجذر فقط تغيّر'],h:'Both end in -itis.'}]},
+ {name:'Ali',role:'Receptionist',staff:true,label:'Suffix sorting',av:{skin:'#DDA77F',hair:'#2B1D16',style:'curly',shirt:'#123E8C'},type:'sort',
+  say:'The patient files got mixed up! Sort each file by its suffix: what is being done?',sayAr:'اختلطت ملفات المرضى! صنّف كل ملف حسب اللاحقة.',
+  bins:[['itis','Inflammation','التهاب'],['ectomy','Surgical removal','استئصال جراحي'],['tomy','Incision / cutting into','شق / فتح'],['plasty','Repair / reshaping','ترميم / إعادة تشكيل'],['ia','Condition','حالة']],
+  cards:[['cheilitis','itis'],['gingivectomy','ectomy'],['pulpotomy','tomy'],['alveoloplasty','plasty'],['microdontia','ia'],['apicoectomy','ectomy'],['stomatitis','itis'],['hypodontia','ia']],
+  h:'Read the last letters carefully. -ectomy and -tomy look alike, but -ectomy has "ec" before "tomy".',forgive:2,
+  outHTML:'<ul class="mlist"><li><span class="chip suf">-itis</span>inflammation</li><li><span class="chip suf">-ectomy</span>surgical removal</li><li><span class="chip suf">-tomy</span>incision / cutting into</li><li><span class="chip suf">-plasty</span>repair / reshaping</li><li><span class="chip suf">-ia</span>condition</li></ul>',
+  note:'-ectomy takes something out. -tomy only cuts into it.'},
+ {name:'Mr. Saeed',role:'52 years old',gold:true,av:{skin:'#E2AE86',hair:'#9AA0A6',style:'bald',shirt:'#B9C4D8',glasses:true},pic:'apico',cap:['The root tip is removed','استئصال قمة الجذر'],
+  say:'My dentist says I need an apicoectomy. What will you do to my tooth?',sayAr:'قال طبيبي إنني أحتاج إلى apicoectomy. ماذا ستفعلون بسنّي؟',
+  parts:[['apic','root'],['o','cv'],['ectomy','suf']],mean:'Surgical removal of the apical portion of a tooth root',meanAr:'استئصال قمة جذر السن',note:'apic + o + ectomy. You did not need to memorise it.',
+  steps:[
+   {k:'suf',opts:['-ectomy','-tomy','-itis','-plasty'],ans:'-ectomy',rv:[2],log:['-ectomy = surgical removal','استئصال جراحي'],h:'Careful: -tomy hides inside the ending. Read all of it.'},
+   {k:'pre',q:['The word starts with <b>a</b>. Is that a prefix?','هل حرف a في البداية سابقة؟'],opts:['No. apic is the root','Yes. a- is a prefix'],ans:'No. apic is the root',keep:true,log:['No prefix. apic is the root','لا توجد سابقة'],h:'Identify only what is present.'},
+   {k:'root',q:['<b>apic</b> means…','ماذا يعني الجذر apic؟'],opts:['apex (root tip)','crown','gum','pulp'],ans:'apex (root tip)',rv:[0],log:['apic = apex / root tip','قمة الجذر'],h:'Look at the picture: which part is lifted away?'},
+   {k:'cv',q:['And the <b>o</b> in apic-o-ectomy?','وما وظيفة حرف o؟'],opts:['Combining vowel','Part of the suffix','A second root'],ans:'Combining vowel',keep:true,rv:[1],log:['o = combining vowel','حرف ربط'],h:'It links the root to the suffix.'},
+   {k:'comb',opts:['Surgical removal of the root apex','Removal of the whole tooth','Cutting into the crown','Inflammation of the apex'],ans:'Surgical removal of the root apex',log:['apicoectomy = removal of the root apex','استئصال قمة الجذر'],h:'apex + surgical removal.'}]},
+ {name:'Mrs. Rana',label:'hypodontia · microdontia',role:'Mother of Sara (9) and Yousef (12)',av:{skin:'#F0C29E',hair:'#7A5BA6',style:'hijab',shirt:'#F5CD5E'},
+  say:'One of Sara’s teeth never grew. Yousef has one tooth much smaller than the others.',sayAr:'أحد أسنان سارة لم ينبت أبداً، ولدى يوسف سنّ أصغر بكثير من الباقي.',
+  out:[{parts:[['hypo','pre'],['dont','root'],['ia','suf']],slash:'hypo / odont / ia',mean:'Condition involving reduced tooth number',meanAr:'حالة تتميز بنقص عدد الأسنان'},{parts:[['micro','pre'],['dont','root'],['ia','suf']],slash:'micro / odont / ia',mean:'Condition involving abnormally small teeth',meanAr:'حالة تتميز بصغر حجم الأسنان بشكل غير طبيعي'}],
+  note:'micro- = a problem of size. hypo- = a problem of number.',
+  steps:[
+   {k:'q',tag:'Sara',pic:'gap',cap:['Sara: one tooth is missing','سارة: سنّ مفقودة'],q:['Look at <b>Sara’s</b> teeth. Which term fits?','انظر إلى أسنان سارة: ما المصطلح المناسب؟'],opts:['Hypodontia','Microdontia','Polyodontia'],ans:'Hypodontia',log:['hypo- = deficient / below normal','نقص / أقل من الطبيعي'],h:'Fewer teeth than normal. Which prefix means deficient?'},
+   {k:'q',tag:'Yousef',pic:'small',cap:['Yousef: one tooth is very small','يوسف: سنّ صغيرة جداً'],q:['Now <b>Yousef’s</b> teeth. Which term fits?','الآن أسنان يوسف: ما المصطلح المناسب؟'],opts:['Microdontia','Hypodontia','Polyodontia'],ans:'Microdontia',log:['micro- = small','صغير'],h:'The number is normal. The size is not.'},
+   {k:'pre',q:['Both words end in -odontia. What changed the meaning?','كلا المصطلحين ينتهي بـ -odontia: ما الذي غيّر المعنى؟'],opts:['The prefix','The root','The suffix'],ans:'The prefix',keep:true,log:['The prefix changed the meaning','السابقة غيّرت المعنى'],h:'Look at the start of each word.'}]},
+ {name:'Dr. Rami',staff:true,label:'Three common mistakes',role:'Dental intern',av:{skin:'#D9A47C',hair:'#2B1D16',style:'short',shirt:'#85C4FF',coat:true},
+  say:'I decoded three terms for my exam. Can you check them? I think I made mistakes.',sayAr:'حلّلتُ ثلاثة مصطلحات للامتحان. هل يمكنك مراجعتها؟ أظن أنني أخطأت.',
+  outHTML:'<ul class="mlist"><li><span class="chip conf">1</span>Guessing the whole word from memory</li><li><span class="chip conf">2</span>Forcing a prefix that is not present</li><li><span class="chip conf">3</span>Stopping at the literal meaning</li></ul>',
+  note:'Identify only what is present. Then confirm the clinical meaning.',
+  steps:[
+   {k:'q',tag:'Card 1',q:['Rami wrote: “<b>gingivitis</b> = sub- + gingiv + -itis”. Which mistake?','ما الخطأ الذي وقع فيه؟'],opts:['Guessing from memory','Forcing a prefix that is not present','Stopping at the literal meaning'],keep:true,ans:'Forcing a prefix that is not present',log:['gingivitis = gingiv + -itis. No prefix','لا توجد سابقة'],h:'Is there really a sub- in gingivitis?'},
+   {k:'q',tag:'Card 2',q:['Rami wrote: “<b>pericoronitis</b> = inflammation around the crown. Done!”','ما الخطأ الذي وقع فيه؟'],opts:['Guessing from memory','Forcing a prefix that is not present','Stopping at the literal meaning'],keep:true,ans:'Stopping at the literal meaning',log:['Clinical: soft tissue around a partially erupted tooth','المعنى السريري'],h:'He decoded it but never confirmed.'},
+   {k:'q',tag:'Card 3',q:['Rami wrote: “I saw <b>alveoloplasty</b> before. It means removing the jaw bone.”','ما الخطأ الذي وقع فيه؟'],opts:['Guessing from memory','Forcing a prefix that is not present','Stopping at the literal meaning'],keep:true,ans:'Guessing from memory',log:['-plasty = reshaping, not removal','إعادة تشكيل وليس استئصالاً'],h:'He did not decode the suffix at all.'}]},
+ {name:'Huda',role:'22 years old',av:{skin:'#EDBE98',hair:'#E77F9B',style:'hijab',shirt:'#85C4FF'},pic:'peri',cap:['Swollen gum over a half-erupted wisdom tooth','لثة متورّمة فوق ضرس عقل بازغ جزئياً'],
+  say:'The gum over my back tooth, the one that is only half out, is swollen and painful.',sayAr:'اللثة فوق ضرس العقل النابت جزئياً متورّمة ومؤلمة.',
+  parts:[['peri','pre'],['coron','root'],['itis','suf']],mean:'Inflammation of soft tissue around a partially erupted tooth',meanAr:'التهاب الأنسجة الرخوة حول سن بازغ جزئياً',note:'Decode to predict. Confirm to be precise.',
+  steps:[
+   {k:'suf',opts:['-itis','-tomy','-ia','-plasty'],ans:'-itis',rv:[2],log:['-itis = inflammation','التهاب'],h:'Swollen and painful: what is happening?'},
+   {k:'pre',opts:['peri- (around)','sub- (below)','No prefix'],ans:'peri- (around)',keep:true,rv:[0],log:['peri- = around','حول'],h:'This word does have a prefix.'},
+   {k:'root',q:['<b>coron</b> means…','ماذا يعني الجذر coron؟'],opts:['crown','root','gum','bone'],ans:'crown',rv:[1],log:['coron = crown','تاج'],h:'Think of a king’s crown, on top.'},
+   {k:'comb',tag:'Literal',opts:['Inflammation around the crown','Removal around the crown','Inflammation of the jaw'],ans:'Inflammation around the crown',log:['Literal: inflammation around the crown','المعنى الحرفي'],h:'Put the three parts together, word for word.'},
+   {k:'conf',tag:'Clinical',opts:['Inflammation of soft tissue around a partially erupted tooth','Inflammation inside the crown of the tooth','Infection of the jaw bone'],ans:'Inflammation of soft tissue around a partially erupted tooth',log:['Clinical: soft tissue around a partially erupted tooth','المعنى السريري'],h:'Look at Huda’s picture again.'}]},
+ {name:'Nadia',role:'7 years old',av:{skin:'#F3CBA8',hair:'#3A2618',style:'long',shirt:'#EB6464',kid:true,pigtails:true},pic:'pulp',cap:['An instrument enters the pulp','الأداة تدخل إلى لبّ السن'],
+  say:'The dentist said my baby tooth needs a pulpotomy. Will it hurt?',sayAr:'قال الطبيب إن سنّي اللبنية تحتاج إلى pulpotomy. هل سيؤلمني؟',
+  parts:[['pulp','root'],['o','cv'],['tomy','suf']],mean:'Incision into the dental pulp',meanAr:'شق / فتح لبّ السن',note:'pulpotomy cuts into the pulp. pulpectomy removes it. One suffix changes the whole procedure.',
+  steps:[
+   {k:'suf',opts:['-tomy','-ectomy','-plasty','-itis'],ans:'-tomy',rv:[2],log:['-tomy = incision / cutting into','شق / فتح'],h:'There is no "ec" before "tomy" here.'},
+   {k:'root',q:['<b>pulp</b> means…','ماذا يعني الجذر pulp؟'],opts:['dental pulp','gum','lip','bone'],ans:'dental pulp',rv:[0],log:['pulp = dental pulp','لبّ السن'],h:'The soft centre of the tooth.'},
+   {k:'cv',q:['What is the <b>o</b> in pulp-o-tomy?','ما وظيفة حرف o؟'],opts:['Combining vowel','Part of the root','A prefix'],ans:'Combining vowel',keep:true,rv:[1],log:['o = combining vowel','حرف ربط'],h:'It joins the root to a suffix that starts with a consonant.'},
+   {k:'comb',opts:['Incision into the dental pulp','Removal of the whole tooth','Inflammation of the pulp','Reshaping of the pulp'],ans:'Incision into the dental pulp',log:['pulpotomy = incision into the dental pulp','شق لبّ السن'],h:'pulp + cutting into.'},
+   {k:'suf',tag:'Twist',q:['Next month the plan changes to <b>pulpectomy</b>. What changed?','الشهر القادم تتغيّر الخطة إلى pulpectomy: ما الذي تغيّر؟'],opts:['The suffix: now the pulp is removed','The root: now it is the gum','Nothing: they mean the same'],keep:true,ans:'The suffix: now the pulp is removed',log:['pulpectomy = surgical removal of the dental pulp','استئصال لبّ السن'],h:'Compare -tomy and -ectomy.'}]},
+ {name:'Mr. Khalil',role:'45 years old · trumpet player',mystery:true,label:'cheiloplasty',av:{skin:'#D9A47C',hair:'#4A3424',style:'short',shirt:'#F5CD5E',beard:true},pic:'lipcut',cap:['A deep cut on the lower lip','جرح عميق في الشفة السفلى'],
+  say:'I cut my lip badly and I can’t play my trumpet. The surgeon wrote “cheiloplasty”. I’ve never heard that word!',sayAr:'جرحتُ شفتي ولا أستطيع العزف. كتب الجرّاح cheiloplasty، لم أسمع بهذه الكلمة من قبل!',
+  parts:[['cheil','root'],['o','cv'],['plasty','suf']],mean:'Surgical repair / reshaping of the lip',meanAr:'ترميم / إعادة تشكيل الشفة جراحياً',note:'This word was never in the lecture. You decoded it from parts you already knew. That is the method working.',
+  steps:[
+   {k:'suf',opts:['-plasty','-ectomy','-tomy','-itis'],ans:'-plasty',rv:[2],log:['-plasty = surgical repair / reshaping','ترميم / إعادة تشكيل'],h:'The surgeon wants to fix the lip, not remove it.'},
+   {k:'root',q:['You met this root earlier today. <b>cheil</b> means…','قابلتَ هذا الجذر اليوم: ماذا يعني cheil؟'],opts:['lip','mouth','crown','gland'],ans:'lip',rv:[0],log:['cheil = lip (remember Layla?)','الشفة'],h:'Think back to Layla, patient 1.'},
+   {k:'cv',q:['What is the <b>o</b> in cheil-o-plasty?','ما وظيفة حرف o؟'],opts:['Combining vowel','Part of the suffix','A prefix'],ans:'Combining vowel',keep:true,rv:[1],log:['o = combining vowel','حرف ربط'],h:'-plasty starts with a consonant.'},
+   {k:'comb',opts:['Surgical repair of the lip','Inflammation of the lip','Surgical removal of the lip','Incision into the lip'],ans:'Surgical repair of the lip',log:['cheiloplasty = surgical repair of the lip','ترميم الشفة جراحياً'],h:'Lip + repair.'}]},
+ {name:'Ali',role:'Receptionist',staff:true,label:'Term matching',av:{skin:'#DDA77F',hair:'#2B1D16',style:'curly',shirt:'#123E8C'},type:'match',
+  say:'Afternoon paperwork. Match each term to its meaning before the next patient.',sayAr:'أعمال الظهيرة: طابق كل مصطلح مع معناه.',
+  pairs:[['Apicoectomy','Surgical removal of the root apex'],['Cheilitis','Inflammation of the lip'],['Pulpotomy','Incision into the dental pulp'],['Microdontia','Abnormally small teeth'],['Alveoloplasty','Surgical reshaping of the alveolar area']],
+  h:'Find each suffix first: -ectomy, -itis, -tomy, -ia, -plasty.',forgive:2,
+  out:[{parts:[['alveol','root'],['o','cv'],['plasty','suf']],mean:'Surgical reshaping of the alveolar area',meanAr:'إعادة التشكيل الجراحي لمنطقة العظم السنخي'}],note:'alveol/o = alveolus (tooth socket) · -plasty = surgical repair / reshaping.'},
+ {name:'Mr. Faris',label:'Mini dental case',role:'40 years old',av:{skin:'#C98E66',hair:'#1E1A18',style:'short',shirt:'#23B39A',glasses:true},
+  say:'My file has three findings. Which term goes with each one?',sayAr:'في ملفي ثلاث ملاحظات. ما المصطلح المناسب لكل واحدة؟',
+  out:[{parts:[['peri','pre'],['coron','root'],['itis','suf']],mean:'Inflammation around a partially erupted tooth',meanAr:'التهاب حول سن بازغ جزئياً'},{parts:[['peri','pre'],['odont','root'],['itis','suf']],mean:'Inflammation of the tissues supporting the teeth',meanAr:'التهاب الأنسجة الداعمة للأسنان'},{parts:[['apic','root'],['o','cv'],['ectomy','suf']],mean:'Surgical removal of the root apex',meanAr:'استئصال قمة الجذر'}],
+  note:'Same prefix and suffix, different root: coron (crown) vs odont (tooth).',
+  steps:[
+   {k:'q',tag:'Finding 1',q:['Inflammation around a <b>partially erupted third molar</b>','التهاب حول ضرس عقل بازغ جزئياً'],opts:['Pericoronitis','Periodontitis','Apicoectomy'],keep:true,ans:'Pericoronitis',log:['peri + coron + itis','حول التاج'],h:'Around the crown.'},
+   {k:'q',tag:'Finding 2',q:['Inflammation affecting the <b>supporting tissues</b> around another tooth','التهاب الأنسجة الداعمة حول سن أخرى'],opts:['Pericoronitis','Periodontitis','Apicoectomy'],keep:true,ans:'Periodontitis',log:['peri + odont + itis','حول السن'],h:'Around the tooth itself.'},
+   {k:'q',tag:'Finding 3',q:['A planned <b>surgical removal</b> of a tooth root apex','استئصال جراحي مخطط لقمة جذر السن'],opts:['Pericoronitis','Periodontitis','Apicoectomy'],keep:true,ans:'Apicoectomy',log:['apic + o + ectomy','استئصال قمة الجذر'],h:'A procedure, not an inflammation.'}]},
+ {name:'Mrs. Amal',role:'60 years old · final patient',gold:true,noHint:true,av:{skin:'#E8B793',hair:'#8C939C',style:'hijab',shirt:'#B9C4D8',glasses:true,swell:true},pic:'sial',cap:['Swelling near the jaw, dry mouth','انتفاخ قرب الفك وجفاف الفم'],
+  say:'My cheek near the jaw is swollen, and my mouth feels dry.',sayAr:'خدّي قرب الفك منتفخ، وفمي جاف.',
+  parts:[['sial','root'],['aden','root'],['itis','suf']],mean:'Inflammation of a salivary gland',meanAr:'التهاب الغدة اللعابية',note:'Two roots: keep the meaning of each, then add the suffix. No hints, and you still worked it out.',
+  steps:[
+   {k:'suf',opts:['-itis','-ectomy','-tomy','-ia'],ans:'-itis',rv:[2],log:['-itis = inflammation','التهاب']},
+   {k:'root',tag:'Roots',q:['How many <b>roots</b> come before the suffix?','كم جذراً قبل اللاحقة؟'],opts:['Two: sial + aden','One: sialaden','None, only a prefix'],ans:'Two: sial + aden',keep:true,log:['Two roots','جذران']},
+   {k:'root',q:['<b>sial</b> means…','ماذا يعني الجذر sial؟'],opts:['saliva','sweat','blood','skin'],ans:'saliva',rv:[0],log:['sial/o = saliva / salivary','اللعاب']},
+   {k:'root',q:['<b>aden</b> means…','ماذا يعني الجذر aden؟'],opts:['gland','tooth','bone','lip'],ans:'gland',rv:[1],log:['aden = gland','غدة']},
+   {k:'comb',opts:['Inflammation of a salivary gland','Removal of a salivary gland','Inflammation of the saliva','A dry-mouth condition'],ans:'Inflammation of a salivary gland',log:['sialadenitis = inflammation of a salivary gland','التهاب الغدة اللعابية']}]},
+];
+const TOTAL=P.length;
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const THANKS=[['Thank you, doctor! It finally makes sense.','شكراً دكتور! الآن فهمت.'],['That was fast. I feel better already!','كان ذلك سريعاً، أشعر بتحسّن!'],['I will tell all my friends about this clinic!','سأخبر أصدقائي عن هذه العيادة!'],['You explained it so clearly. Thank you!','شرحتَ ذلك بوضوح، شكراً!']];
+const MEH=[['Hmm… are you sure, doctor?','همم… هل أنت متأكد يا دكتور؟'],['I think I need a second opinion…','أظن أنني أحتاج إلى رأي ثانٍ…'],['Maybe check the suffix again next time?','ربما تراجع اللاحقة في المرة القادمة؟']];
+const TEAMS=[{name:'Team Crown',ar:'فريق التاج'},{name:'Team Root',ar:'فريق الجذر'}];
+
+/* ================= STATE ================= */
+let streak=0,idx=0,teamMode=false,T=[],res=[],mist=0,locked=false,ended=false;
+const stage=$('#stage');
+const timeAt=i=>{const m=9*60+i*35;return `${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}`};
+const cur=()=>T[teamMode?idx%2:0];
+function renderBoard(){
+  const b=$('#board');
+  if(!teamMode){const t=T[0]||{stars:0,score:0};b.innerHTML=`<div class="stat"><small>Stars</small><strong>${t.stars}</strong></div><div class="stat"><small>Score</small><strong>${t.score}</strong></div>`;return}
+  b.innerHTML=T.map((t,i)=>`<div class="stat t${i+1}${idx%2===i&&!ended?' on':''}"><small>${t.name}</small><strong>${t.score}</strong></div>`).join('');
+}
+function renderQueue(){
+  $('#queue').innerHTML='<span class="lbl">Waiting room</span>'+P.map((p,i)=>{const r=res[i];let c='qd'+(p.gold?' gold':'');
+    if(r){c+=' done'+(r.stars<2?' low':'')+(teamMode?' t'+(r.team+1):'')}else if(i===idx&&!ended&&stage.dataset.on)c+=' now';
+    return `<div class="${c}" title="${p.name}">${r?('★'+r.stars):i+1}</div>`}).join('');
+}
+
+/* ================= START ================= */
+function start(){
+  idx=0;res=[];ended=false;streak=0;teamMode=false;T=[{name:'You',stars:0,score:0}];delete stage.dataset.on;$('#time').textContent='8:30';renderBoard();renderQueue();
+  stage.innerHTML=`<section class="hero">
+    <div class="lineup">${[P[0],P[1],P[3],P[4],P[7],P[11]].map(p=>`<div class="avatar">${avatar(p.av,'worried')}</div>`).join('')}</div>
+    <h1><span class="w suf">Decode</span> <span class="w root">Clinic</span></h1>
+    <div class="tagline"><span style="background:var(--suf);color:#fff">Decode</span><span style="background:var(--pre);color:#13213F">Predict</span><span style="background:var(--cv);color:#fff">Confirm</span></div>
+    <p>Twelve patients are waiting. Each one brings a dental term you have never memorised. Use the decoding method from Lecture 3 to treat every one of them before the clinic closes.</p>
+    <div class="how">
+      <div><b>Decode on the chart</b><span>Suffix first, then prefix and root. Each part lights up in its colour as you find it.</span><span class="ar">ابدأ باللاحقة ثم السابقة والجذر</span></div>
+      <div><b>Earn 3 stars</b><span>Every right step lowers the patient’s pain. A wrong step or a hint costs one star. No timer.</span><span class="ar">كل خطأ أو تلميح يكلّف نجمة</span></div>
+      <div><b>Golden patients</b><span>Patients 4 and 12 count double. Watch out for a mystery patient with a word that was never in the lecture.</span><span class="ar">المريضان ٤ و١٢ بنقاط مضاعفة، وانتبه للمريض الغامض</span></div>
+    </div>
+    <div class="modes">
+      <button class="mode-btn" id="solo"><b>Solo</b><span>One player or the whole class together</span></button>
+      <button class="mode-btn" id="teams"><b>Two teams</b><span>Team Crown vs Team Root, one patient each</span></button>
+    </div>
+  </section>`;
+  $('#solo').onclick=()=>{S.click();T=[{name:'You',stars:0,score:0}];teamMode=false;renderBoard();arrive(0)};
+  $('#teams').onclick=()=>{S.click();teamMode=true;T=TEAMS.map(t=>({...t,stars:0,score:0}));renderBoard();arrive(0)};
+}
+
+/* ================= ARRIVAL ================= */
+function arrive(i){
+  idx=i;const p=P[i],sp=$('#splash');$('#time').textContent=timeAt(i);stage.dataset.on='1';renderBoard();renderQueue();
+  sp.className=p.gold?'gold':p.mystery?'myst':'';
+  sp.innerHTML=`<div class="sp">
+    <span class="time">${timeAt(i)} · Patient ${i+1} of ${TOTAL}</span>
+    <div class="avatar">${avatar(p.av,'worried')}</div>
+    ${p.gold?'<span class="gold">Golden patient · double points</span>':''}${p.mystery?'<span class="myst">Mystery patient · a word you never studied</span>':''}
+    <span class="who">${p.name}</span><span class="sub">${p.role}</span>
+    ${teamMode?`<span class="team t${i%2+1}">${T[i%2].name}, this one is yours</span>`:''}
+    <button class="btn" id="callin">${p.staff?'Start':'Call the patient in'}</button></div>`;
+  sp.hidden=false;S.bell();if(p.gold)setTimeout(S.gold,700);
+  $('#callin').onclick=()=>{sp.hidden=true;S.click();play(i)};$('#callin').focus({preventScroll:true});
+}
+
+/* ================= ROUND ================= */
+let api={};
+function play(i){
+  idx=i;mist=0;locked=false;api={};pain=100;const p=P[i],team=cur();
+  stage.innerHTML=`<div class="room">
+    <aside class="patient">
+      <div class="p-head"><div class="avatar" id="av">${avatar(p.av,'worried')}</div><div class="p-name"><span class="p-tag">${p.staff?'Clinic staff':'Patient '+(i+1)}</span><b>${p.name}</b><span>${p.role}</span></div></div>
+      <div class="say" id="say"><span>“${p.say}”</span><span class="ar">${p.sayAr}</span></div>
+      ${p.staff?'':'<div class="pain"><div class="pl"><span>Pain level</span><span class="ar">مستوى الألم</span></div><div class="track"><div class="fill" id="painf"></div></div></div>'}
+      <figure class="pic" id="pic" ${p.pic?'':'hidden'}></figure>
+    </aside>
+    <section class="chart" id="chart">
+      <div class="c-head"><span class="t">Chart · ${timeAt(i)}</span>${p.gold?'<span class="gold-tag">×2 golden</span>':''}${p.mystery?'<span class="myst-tag">Mystery word</span>':''}${teamMode?`<span class="turn t${i%2+1}">${team.name}</span>`:''}<span class="m">${p.type==='order'?'Opening checklist':p.type==='sort'?'File sorting':p.type==='match'?'Paperwork':p.parts?'Decode the term':'Case review'}</span></div>
+      <div id="body" style="display:grid;gap:16px"></div>
+    </section></div>`;
+  if(p.pic)setPic(p.pic,p.cap);
+  setPain(100);
+  if(p.type)({order:rOrder,sort:rSort,match:rMatch})[p.type](p);else rSteps(p);
+  stage.scrollIntoView({block:'start',behavior:reduce?'auto':'smooth'});
+}
+function setPain(v){const f=$('#painf');if(!f)return;v=Math.max(4,Math.min(100,v));f.style.width=v+'%';f.style.background=v>66?'#E2373F':v>33?'#F5A142':'#23B39A'}
+let pain=100;
+function setPic(k,cap){const f=$('#pic');if(!f)return;f.hidden=false;const svg=k==='gap'||k==='small'?PIC.teeth(k):PIC[k];f.innerHTML=svg+(cap?`<figcaption><span>${cap[0]}</span><span class="ar">${cap[1]}</span></figcaption>`:'')}
+function mood(m){const a=$('#av');if(!a)return;a.innerHTML=avatar(P[idx].av,m);a.classList.remove('bounce','shake');void a.offsetWidth;a.classList.add(m==='happy'?'bounce':'shake')}
+function hintBtn(text,onUse){
+  const p=P[idx],wrap=h('div','tools'),b=h('button','hint',p.noHint?'No hints for this patient':'Ask the consultant (−1 star)');b.disabled=!!p.noHint||!text;
+  const box=h('div','hint-box');box.hidden=true;
+  b.onclick=()=>{mist++;S.hint();box.hidden=false;box.innerHTML='<b>Consultant:</b> '+text;b.disabled=true;onUse&&onUse()};
+  wrap.append(b);return [wrap,box];
+}
+const termHTML=(parts,shown)=>parts.map(([t,k],j)=>`<span class="w ${shown.has(j)?k:'plain'}" data-j="${j}">${t}</span>`).join('');
+
+/* ---- steps engine (decoders, pictures, case reviews) ---- */
+function rSteps(p){
+  const body=$('#body');let s=0;const shown=new Set(),state=p.steps.map(()=>'todo');
+  const term=h('div','term');if(p.parts){term.innerHTML=termHTML(p.parts,shown);body.append(term)}
+  const rail=h('div','rail'),ask=h('div','ask'),opts=h('div','opts'),notes=h('ul','notes'),tools=h('div');
+  body.append(rail,ask,opts,tools,notes);
+  const drawRail=()=>{rail.innerHTML=p.steps.map((st,j)=>`<span class="pill ${st.k} ${j===s&&state[j]==='todo'?'now':state[j]}">${st.tag||TAG[st.k]}</span>`).join('')};
+  function show(){
+    const st=p.steps[s];drawRail();
+    if(st.pic)setPic(st.pic,st.cap);
+    const q=st.q||Q[st.k]||['',''];
+    ask.innerHTML=`<span class="tag ${st.k}">Step ${s+1} of ${p.steps.length} · ${st.tag||TAG[st.k]}</span><h2>${q[0]}</h2><p class="ar">${q[1]}</p>`;
+    opts.innerHTML='';const order=st.keep?st.opts:shuffle(st.opts);
+    order.forEach((o,j)=>{const b=h('button','opt',`<span class="key">${'ABCD'[j]}</span><span class="lbl">${o}</span>`);b.dataset.v=o;b.onclick=()=>answer(b,o);opts.append(b)});
+    tools.innerHTML='';const [w,box]=hintBtn(st.h);tools.append(w,box);
+  }
+  function answer(b,o){
+    if(locked)return;locked=true;const st=p.steps[s],ok=o===st.ans;
+    opts.querySelectorAll('.opt').forEach(x=>{x.disabled=true;if(x.dataset.v===st.ans)x.classList.add('right');else if(x!==b)x.classList.add('dim')});
+    tools.querySelectorAll('button').forEach(x=>x.disabled=true);
+    if(ok){S.step();pain-=100/p.steps.length}else{b.classList.add('wrong');mist++;S.bad();mood('worried');pain=Math.min(100,pain+8)}
+    setPain(pain);
+    state[s]=ok?'ok':'bad';
+    (st.rv||[]).forEach(j=>shown.add(j));
+    if(p.parts){term.innerHTML=termHTML(p.parts,shown);(st.rv||[]).forEach(j=>term.querySelector(`[data-j="${j}"]`)?.classList.add('pop'))}
+    const li=h('li',ok?'y':'n',`<i>${ok?'✓':'✗'}</i><span>${st.log[0]}</span><span class="ar">${st.log[1]}</span>`);notes.prepend(li);
+    drawRail();
+    setTimeout(()=>{locked=false;s++;if(s<p.steps.length)show();else{ask.remove();opts.remove();tools.remove();finish(p)}},ok?650:1300);
+  }
+  show();
+}
+
+/* ---- order engine ---- */
+function rOrder(p){
+  const body=$('#body');let n=0;
+  body.innerHTML=`<div class="ask"><span class="tag q">Opening checklist</span><h2>Tap the five steps of the <b>decoding method</b> in order.</h2><p class="ar">اضغط على خطوات التحليل الخمس بالترتيب.</p></div>`;
+  const slots=h('div','order-slots'),bank=h('div','order-bank'),tools=h('div');
+  p.items.forEach((_,j)=>slots.append(h('div','slot',`<span class="n">${j+1}</span><span>…</span>`)));
+  shuffle(p.items.map((it,j)=>({it,j}))).forEach(({it,j})=>{const b=h('button','ocard',`<span class="chip ${it[0]}">${it[1]}</span><span>${it[2]}</span><span class="ar">${it[3]}</span>`);
+    b.onclick=()=>{if(j===n){S.step();const sl=slots.children[n];sl.className='slot filled';sl.innerHTML=`<span class="n">${n+1}</span><span class="chip ${it[0]}">${it[1]}</span><span>${it[2]}</span>`;b.remove();n++;if(n===p.items.length){tools.remove();finish(p)}}
+      else{mist++;S.bad();b.classList.remove('no');void b.offsetWidth;b.classList.add('no');mood('worried')}};bank.append(b)});
+  const [w,box]=hintBtn(p.h);tools.append(w,box);
+  body.append(slots,bank,tools);
+}
+
+/* ---- sort engine ---- */
+function rSort(p){
+  const body=$('#body');const q=shuffle(p.cards);let k=0;const cnt={};p.bins.forEach(b=>cnt[b[0]]=0);
+  body.innerHTML=`<div class="ask"><span class="tag suf">File sorting</span><h2>What is being done in each file? Sort it by its <b>suffix</b>.</h2><p class="ar">صنّف كل ملف حسب اللاحقة.</p></div>`;
+  const card=h('div','sort-card'),left=h('div','sort-left'),bins=h('div','bins'),tools=h('div');
+  body.append(card,left,bins,tools);
+  const drawBins=()=>{bins.innerHTML='';p.bins.forEach(([sf,en,ar])=>{const b=h('button','bin',`<b>-${sf}</b><span>${en}</span><small>${ar}</small><span class="cnt">${cnt[sf]}</span>`);b.dataset.s=sf;b.onclick=()=>pick(sf,b);bins.append(b)})};
+  const drawCard=()=>{card.innerHTML=`<span class="w plain">${q[k][0]}</span>`;left.textContent=`File ${k+1} of ${q.length}`};
+  function pick(sf,b){if(locked)return;const ans=q[k][1];locked=true;
+    if(sf===ans){S.step()}else{mist++;S.bad();mood('worried')}
+    cnt[ans]++;drawBins();const right=bins.querySelector(`[data-s="${ans}"]`);right.classList.add('flash');
+    card.innerHTML=`<span class="w root">${q[k][0].slice(0,q[k][0].length-ans.length)}</span><span class="w suf">${ans}</span>`;
+    setTimeout(()=>{locked=false;k++;if(k<q.length){drawBins();drawCard()}else{bins.remove();card.remove();left.remove();tools.remove();finish(p)}},sf===ans?600:1300)}
+  drawBins();drawCard();const [w,box]=hintBtn(p.h);tools.append(w,box);
+}
+
+/* ---- match engine ---- */
+function rMatch(p){
+  const body=$('#body');let sel=null,done=0;
+  body.innerHTML=`<div class="ask"><span class="tag q">Paperwork</span><h2>Tap a <b>term</b>, then tap its <b>meaning</b>.</h2><p class="ar">اضغط على المصطلح ثم على معناه.</p></div>`;
+  const m=h('div','match'),L=h('div','mcol'),R=h('div','mcol'),tools=h('div');m.append(L,R);body.append(m,tools);
+  shuffle(p.pairs).forEach(([t])=>{const b=h('button','mbtn',t);b.dataset.t=t;b.onclick=()=>{if(b.classList.contains('done'))return;L.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');sel=t;S.click()};L.append(b)});
+  shuffle(p.pairs).forEach(([t,d])=>{const b=h('button','mbtn',d);b.onclick=()=>{if(!sel||b.classList.contains('done'))return;
+    if(t===sel){done++;S.step();const lb=L.querySelector(`[data-t="${t}"]`);[lb,b].forEach(x=>{x.classList.remove('sel');x.classList.add('done');x.innerHTML=`<span class="pn">${done}</span>`+x.textContent});sel=null;if(done===p.pairs.length){tools.remove();finish(p)}}
+    else{mist++;S.bad();b.classList.remove('no');void b.offsetWidth;b.classList.add('no');mood('worried')}};R.append(b)});
+  const [w,box]=hintBtn(p.h);tools.append(w,box);
+}
+
+/* ---- finish a patient ---- */
+const STAR='<svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.6 1.3 6.5L12 17.2 6.1 20.4l1.3-6.5L2.5 9.3l6.6-.8z" fill="#F5C542" stroke="#B98900" stroke-width="1"/></svg>';
+function outBlock(o){const sl=o.slash||o.parts.map(([t])=>t).join(' / ');
+  const slHTML=o.slash?o.slash:o.parts.map(([t,k])=>`<span class="c-${k}">${t}</span>`).join('<span class="sep">/</span>');
+  return `<div class="orow"><div>${o.parts.map(([t,k])=>`<span class="w ${k}">${t}</span>`).join('')}</div><span class="sl">${slHTML}</span><div class="mm"><span>${o.mean}</span><span class="ar">${o.meanAr}</span></div></div>`}
+function finish(p){
+  const per=p.forgive||1,stars=Math.max(0,3-Math.ceil(mist/per)),mult=p.gold?2:1,pts=stars*100*mult,t=cur();
+  t.stars+=stars*mult;t.score+=pts;res[idx]={stars,team:teamMode?idx%2:0};renderBoard();renderQueue();
+  mood(stars>=2?'happy':'sad');
+  if(!p.staff){setPain(100-stars*32);const say=$('#say'),r=stars>=2?pick(THANKS):pick(MEH);say.className='say '+(stars>=2?'thanks':'meh');say.innerHTML=`<span>“${r[0]}”</span><span class="ar">${r[1]}</span>`}
+  streak=stars===3?streak+1:0;
+  const outs=p.out||(p.parts?[{parts:p.parts,mean:p.mean,meanAr:p.meanAr}]:[]);
+  const panel=h('div','treated',`<span class="stamp ${stars<2?'low':''}">${p.staff?'DONE':'TREATED'}</span>
+    <div class="stars">${[0,1,2].map(j=>`<span class="st" data-j="${j}">${STAR}</span>`).join('')}<span class="pts">+${pts}${p.gold?' · golden ×2':''}</span></div>
+    ${outs.length?`<div class="out ${outs.length>1?'many':''}">${outs.map(outBlock).join('')}</div>`:''}
+    ${p.outHTML?`<div>${p.outHTML}</div>`:''}
+    ${streak>=2?`<span class="streak">${streak>=4?'Unstoppable':'Hot streak'} · ${streak} perfect in a row</span>`:''}
+    <p class="tnote">${p.note}</p>
+    <div class="actions"><button class="btn" id="next">${idx<TOTAL-1?'Next patient →':'Close the clinic →'}</button></div>`);
+  $('#body').append(panel);
+  for(let j=0;j<stars;j++)setTimeout(()=>{panel.querySelector(`[data-j="${j}"]`).classList.add('on');S.star(j)},250+j*280);
+  if(stars===3){setTimeout(()=>{S.done();confetti(p.gold||streak>=3?130:70,p.gold);if(streak>=2)setTimeout(S.gold,400)},1100)}else if(stars<2)setTimeout(S.sad,900);
+  const nx=$('#next');nx.onclick=()=>{S.click();idx<TOTAL-1?arrive(idx+1):end()};
+  setTimeout(()=>{panel.scrollIntoView({behavior:reduce?'auto':'smooth',block:'nearest'});nx.focus({preventScroll:true})},300);
+}
+
+/* ================= END ================= */
+function end(){
+  ended=true;renderBoard();renderQueue();$('#time').textContent='17:00';
+  const max=P.reduce((a,p)=>a+3*(p.gold?2:1),0);
+  const rows=P.map((p,i)=>`<div><div class="avatar">${avatar(p.av,res[i].stars>=2?'happy':'sad')}</div><div class="rt"><b>${p.parts?p.parts.map(x=>x[0]).join(''):p.label}</b><span>${p.name}${teamMode?' · '+T[res[i].team].name:''}</span></div><span class="rs">${'★'.repeat(res[i].stars)}${'☆'.repeat(3-res[i].stars)}</span></div>`).join('');
+  let head;
+  if(teamMode){const [a,b]=T,win=a.score===b.score?null:(a.score>b.score?0:1);
+    head=`<span class="tagline"><span style="background:var(--navy);color:#fff">Clinic closed · 17:00</span></span><p class="rank">${win===null?'It’s a tie!':T[win].name+' wins!'}</p><p class="ar" style="color:var(--red);font-weight:700;font-size:22px">${win===null?'تعادل!':'فاز '+T[win].ar+'!'}</p>
+      <div class="podium">${T.map((t,j)=>`<div class="pod t${j+1}${win===j?' win':''}"><small>${t.name}</small><strong>${t.score}</strong><span>${t.stars} stars</span></div>`).join('')}</div>`}
+  else{const st=T[0].stars,pc=st/max;const r=pc>=.9?['Chief Decoder','كبير المحلّلين']:pc>=.7?['Specialist','أخصائي']:pc>=.45?['Resident','طبيب مقيم']:['Intern','طبيب امتياز'];
+    head=`<span class="tagline"><span style="background:var(--navy);color:#fff">Clinic closed · 17:00</span></span><p class="rank">${r[0]}</p><p class="ar" style="color:var(--red);font-weight:700;font-size:22px">${r[1]}</p><p>${st} of ${max} stars · ${T[0].score} points</p>`}
+  stage.innerHTML=`<section class="hero">${head}<div class="report">${rows}</div>
+    <p>You did not memorise one of these words. You decoded them.</p><p class="ar">لم تحفظ أي مصطلح منها، بل حلّلتها.</p>
+    <div class="actions"><button class="btn" id="again">Open the clinic again</button></div></section>`;
+  S.done();setTimeout(()=>S.gold(),500);confetti(150);setTimeout(()=>confetti(110,true),600);
+  $('#again').onclick=()=>{S.click();start()};stage.scrollIntoView({block:'start'});
+}
+start();
+</script>
+
+</body></html>
